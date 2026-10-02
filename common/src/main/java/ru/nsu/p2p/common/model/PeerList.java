@@ -1,5 +1,10 @@
 package ru.nsu.p2p.common.model;
 
-public record PeerList() {
+import java.util.List;
+
+public record PeerList(
+        String fileId,
+        List<PeerInfo> peers
+) {
 
 }
