@@ -1,4 +1,18 @@
 package ru.nsu.p2p.common.error;
 
 public enum ErrorCode {
+    INVALID_ARGUMENT,
+    INVALID_STATE,
+    NOT_FOUND,
+    TARGET_EXISTS,
+    FILE_CHANGED,
+    TRACKER_UNAVAILABLE,
+    CONNECTION_TIMEOUT,
+    SOURCE_UNAVAILABLE,
+    HASH_MISMATCH,
+    INCOMPATIBLE_MANIFEST,
+    IO_ERROR,
+    CANCELED,
+    DATA_NOT_READY
+
 }
