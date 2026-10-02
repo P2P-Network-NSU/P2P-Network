@@ -7,5 +7,9 @@ import ru.nsu.p2p.common.protocol.core.MessageType;
 public record CatalogRequest(
     CatalogQuery query
 ) implements Message {
-    @Override public MessageType getType() { return MessageType.TRACKER_CATALOG_REQ; }
+
+    @Override
+    public MessageType getType() {
+        return MessageType.TRACKER_CATALOG_REQ;
+    }
 }

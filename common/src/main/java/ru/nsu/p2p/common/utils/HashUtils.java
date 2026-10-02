@@ -1,7 +1,9 @@
 package ru.nsu.p2p.common.utils;
 
 public final class HashUtils {
-    private HashUtils() {}
+
+    private HashUtils() {
+    }
 
     /**
      * Возвращает SHA-256 в виде строки из 64 шестнадцатеричных символов нижнего регистра.

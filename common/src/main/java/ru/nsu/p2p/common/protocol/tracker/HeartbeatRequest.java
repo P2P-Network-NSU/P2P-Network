@@ -9,6 +9,9 @@ public record HeartbeatRequest(
     List<String> fileIds
 ) implements Message {
 
-    @Override public MessageType getType() { return MessageType.TRACKER_HEARTBEAT_REQ; }
+    @Override
+    public MessageType getType() {
+        return MessageType.TRACKER_HEARTBEAT_REQ;
+    }
 
 }

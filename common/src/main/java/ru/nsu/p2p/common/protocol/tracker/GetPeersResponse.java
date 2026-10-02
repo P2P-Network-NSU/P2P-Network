@@ -7,5 +7,9 @@ import ru.nsu.p2p.common.protocol.core.MessageType;
 public record GetPeersResponse(
     PeerList peerList
 ) implements Message {
-    @Override public MessageType getType() { return MessageType.TRACKER_GET_PEERS_RES; }
+
+    @Override
+    public MessageType getType() {
+        return MessageType.TRACKER_GET_PEERS_RES;
+    }
 }

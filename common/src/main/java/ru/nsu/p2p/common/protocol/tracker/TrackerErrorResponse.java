@@ -7,5 +7,9 @@ import ru.nsu.p2p.common.protocol.core.MessageType;
 public record TrackerErrorResponse(
     OperationError error
 ) implements Message {
-    @Override public MessageType getType() { return MessageType.TRACKER_ERROR_RES; }
+
+    @Override
+    public MessageType getType() {
+        return MessageType.TRACKER_ERROR_RES;
+    }
 }

@@ -9,6 +9,9 @@ public record RegisterPeerRequest(
     PeerAddress address
 ) implements Message {
 
-    @Override public MessageType getType() { return MessageType.TRACKER_REGISTER_REQ; }
+    @Override
+    public MessageType getType() {
+        return MessageType.TRACKER_REGISTER_REQ;
+    }
 
 }

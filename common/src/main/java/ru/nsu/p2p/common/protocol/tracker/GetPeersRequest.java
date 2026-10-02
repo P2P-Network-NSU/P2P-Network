@@ -6,5 +6,9 @@ import ru.nsu.p2p.common.protocol.core.MessageType;
 public record GetPeersRequest(
     String fileId
 ) implements Message {
-    @Override public MessageType getType() { return MessageType.TRACKER_GET_PEERS_REQ; }
+
+    @Override
+    public MessageType getType() {
+        return MessageType.TRACKER_GET_PEERS_REQ;
+    }
 }

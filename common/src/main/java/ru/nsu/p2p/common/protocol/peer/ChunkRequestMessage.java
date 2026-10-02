@@ -7,5 +7,9 @@ public record ChunkRequestMessage(
     String fileId,
     int chunkIndex
 ) implements Message {
-    @Override public MessageType getType() { return MessageType.PEER_CHUNK_REQ; }
+
+    @Override
+    public MessageType getType() {
+        return MessageType.PEER_CHUNK_REQ;
+    }
 }

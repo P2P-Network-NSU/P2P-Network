@@ -7,5 +7,9 @@ public record PeerHandshakeRequest(
     String fileId,
     String peerId
 ) implements Message {
-    @Override public MessageType getType() { return MessageType.PEER_HANDSHAKE; }
+
+    @Override
+    public MessageType getType() {
+        return MessageType.PEER_HANDSHAKE;
+    }
 }

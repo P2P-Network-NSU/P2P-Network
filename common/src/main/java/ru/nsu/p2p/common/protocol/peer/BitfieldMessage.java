@@ -6,5 +6,9 @@ import ru.nsu.p2p.common.protocol.core.MessageType;
 public record BitfieldMessage(
     byte[] availableChunks
 ) implements Message {
-    @Override public MessageType getType() { return MessageType.PEER_BITFIELD; }
+
+    @Override
+    public MessageType getType() {
+        return MessageType.PEER_BITFIELD;
+    }
 }

@@ -8,5 +8,9 @@ public record ChunkPayloadMessage(
     int chunkIndex,
     byte[] data
 ) implements Message {
-    @Override public MessageType getType() { return MessageType.PEER_CHUNK_PAYLOAD; }
+
+    @Override
+    public MessageType getType() {
+        return MessageType.PEER_CHUNK_PAYLOAD;
+    }
 }
