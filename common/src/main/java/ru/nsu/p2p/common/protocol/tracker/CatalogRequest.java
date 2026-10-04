@@ -4,6 +4,10 @@ import ru.nsu.p2p.common.model.CatalogQuery;
 import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.core.MessageType;
 
+
+/**
+ * Запрос на поиск файлов в каталоге Трекера.
+ */
 public record CatalogRequest(
     CatalogQuery query
 ) implements Message {

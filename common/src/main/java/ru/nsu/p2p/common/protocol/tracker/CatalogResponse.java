@@ -4,6 +4,10 @@ import ru.nsu.p2p.common.model.CatalogPage;
 import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.core.MessageType;
 
+
+/**
+ * Ответ Трекера с результатами поиска.
+ */
 public record CatalogResponse(
     CatalogPage page
 ) implements Message {

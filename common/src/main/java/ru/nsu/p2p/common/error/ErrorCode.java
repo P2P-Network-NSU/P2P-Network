@@ -1,18 +1,22 @@
 package ru.nsu.p2p.common.error;
 
+/**
+ * Глобальный справочник кодов ошибок приложения.
+ * Использование кодов (вместо текстовых сообщений) позволяет UI-слою локализовать
+ * ошибки на разные языки и программно реагировать на конкретные ситуации.
+ */
 public enum ErrorCode {
-    INVALID_ARGUMENT,
-    INVALID_STATE,
-    NOT_FOUND,
-    TARGET_EXISTS,
-    FILE_CHANGED,
-    TRACKER_UNAVAILABLE,
-    CONNECTION_TIMEOUT,
-    SOURCE_UNAVAILABLE,
-    HASH_MISMATCH,
-    INCOMPATIBLE_MANIFEST,
-    IO_ERROR,
-    CANCELED,
-    DATA_NOT_READY
-
+    INVALID_ARGUMENT,      // Переданы неверные параметры (например, пустой fileId).
+    INVALID_STATE,         // Действие недопустимо в текущем состоянии (например, resume() для COMPLETED).
+    NOT_FOUND,             // Файл или пир не найден на Трекере.
+    TARGET_EXISTS,         // Попытка сохранить файл туда, где уже есть файл с таким именем.
+    FILE_CHANGED,          // Локальный файл был изменен извне во время раздачи (хеши больше не совпадают).
+    TRACKER_UNAVAILABLE,   // Трекер не отвечает (таймаут или отказ в соединении).
+    CONNECTION_TIMEOUT,    // Не удалось подключиться к пиру за отведенное время.
+    SOURCE_UNAVAILABLE,    // Нет ни одного пира, у которого есть нужные нам чанки.
+    HASH_MISMATCH,         // Критическая ошибка P2P: скачанный чанк не прошел проверку SHA-256.
+    INCOMPATIBLE_MANIFEST, // Манифест файла не поддерживается текущей версией клиента.
+    IO_ERROR,              // Ошибка работы с диском (нет места, нет прав доступа).
+    CANCELED,              // Операция была прервана пользователем.
+    DATA_NOT_READY         // Для стриминга: запрошенный чанк еще не скачан, а таймаут истек.
 }

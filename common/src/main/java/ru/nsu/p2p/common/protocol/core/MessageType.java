@@ -1,19 +1,28 @@
 package ru.nsu.p2p.common.protocol.core;
 
+/**
+ * Глобальный реестр всех типов сообщений в нашем P2P-протоколе.
+ * Передается в заголовке (MessageHeader) в виде 1 байта.
+ * Позволяет принимающей стороне (MessageCodec) понять, в какой именно Java-класс
+ * нужно десериализовать входящий массив байтов.
+ */
 public enum MessageType {
-    TRACKER_REGISTER_REQ,
-    TRACKER_REGISTER_RES,
-    TRACKER_HEARTBEAT_REQ,
-    TRACKER_PUBLISH_REQ,
-    TRACKER_CATALOG_REQ,
-    TRACKER_CATALOG_RES,
-    TRACKER_GET_PEERS_REQ,
-    TRACKER_GET_PEERS_RES,
-    TRACKER_ERROR_RES,
+    // === Взаимодействие Клиент <-> Трекер ===
 
-    PEER_HANDSHAKE,
-    PEER_BITFIELD,
-    PEER_CHUNK_REQ,
-    PEER_CHUNK_PAYLOAD
+    TRACKER_REGISTER_REQ,  // Клиент сообщает Трекеру свой IP и порт для приема входящих соединений.
+    TRACKER_REGISTER_RES,  // Трекер подтверждает регистрацию и выдает интервал для Heartbeat.
+    TRACKER_HEARTBEAT_REQ, // Клиент сообщает Трекеру, что он жив, и передает список раздаваемых файлов.
+    TRACKER_PUBLISH_REQ,   // Клиент публикует новый файл (отправляет FileManifest).
+    TRACKER_CATALOG_REQ,   // Клиент запрашивает страницу каталога (поиск).
+    TRACKER_CATALOG_RES,   // Трекер возвращает результаты поиска (CatalogPage).
+    TRACKER_GET_PEERS_REQ, // Клиент запрашивает список пиров для конкретного файла.
+    TRACKER_GET_PEERS_RES, // Трекер возвращает список пиров (PeerList).
+    TRACKER_ERROR_RES,     // Трекер сообщает об ошибке (например, неверный запрос).
 
+    // === Взаимодействие Пир <-> Пир (P2P) ===
+
+    PEER_HANDSHAKE,        // Первое сообщение после установки TCP-соединения. Пиры сверяют fileId.
+    PEER_BITFIELD,         // Обмен битовыми масками: пир сообщает, какие чанки у него есть.
+    PEER_CHUNK_REQ,        // Запрос конкретного чанка по его индексу.
+    PEER_CHUNK_PAYLOAD     // Ответ с сырыми байтами запрошенного чанка.
 }
