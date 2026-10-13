@@ -1,0 +1,6 @@
+rootProject.name = 'p2p-network'
+include 'common'
+include 'tracker-server'
+include 'client-core'
+include 'client-ui'
+include 'client-app'
