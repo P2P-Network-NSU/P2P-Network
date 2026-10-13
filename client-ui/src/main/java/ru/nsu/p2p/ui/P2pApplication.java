@@ -33,6 +33,19 @@ public final class P2pApplication extends Application {
         // Элементы списка - это файлы
         ListView<File> files = new ListView<>();
 
+        Button removeButton = new Button("Убрать из списка");
+
+        removeButton.setOnAction(event -> {
+            // getSelectionModel() - объект, который управляет выделением строк
+            // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
+            int index = files.getSelectionModel().getSelectedIndex();
+
+            if (index >= 0) {
+                files.getItems().remove(index);
+                label.setText("Файлов в списке: " + files.getItems().size());
+            }
+        });
+
         // Регистрация нажатия
         button.setOnAction(event -> {
             FileChooser chooser = new FileChooser();
@@ -49,7 +62,7 @@ public final class P2pApplication extends Application {
 
         // Создание VBox, расстояние между элементами - 16
         // Помещаем надпись и кнопку
-        VBox root = new VBox(16, label, button, files);
+        VBox root = new VBox(16, label, button, removeButton, files);
         root.setAlignment(Pos.CENTER);
 
         Scene scene = new Scene(root, 1280, 720);
