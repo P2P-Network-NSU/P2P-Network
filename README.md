@@ -10,3 +10,5 @@ The Group Project - P2P Network
 Куратор: Мокин Константин Юрьевич
 
 Vision проекта: https://github.com/P2P-Network-NSU/P2P-Network/wiki/Vision
+
+rero
