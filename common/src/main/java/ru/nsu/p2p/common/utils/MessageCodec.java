@@ -20,7 +20,7 @@ public interface MessageCodec {
     byte[] encode(Message message);
 
     /**
-     * Преобразует сырые байты полезной нагрузки (Payload) обратно в объект Message.
+     * Преобразует сырые байты полезной нагрузки (Payload) с заголовком обратно в объект Message.
      * Вызывается после того, как сетевой слой прочитал заголовок, проверил Magic Bytes
      * и вычитал payloadLength байт из сокета.
      *
