@@ -1,10 +1,7 @@
 package ru.nsu.p2p.tracker.repository.memory;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import ru.nsu.p2p.common.model.PeerInfo;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
@@ -31,33 +28,31 @@ public class InMemoryPeerRepository implements PeerRepository {
 
     @Override
     public boolean updateHeartBeat(String peerId, List<String> fileIds, Instant now) {
-        if (!peersStorage.containsKey(peerId)) {
+        PeerInfo oldInfo = peersStorage.get(peerId);
+        if (oldInfo == null) {
             return false;
         }
-
-        PeerInfo oldInfo = peersStorage.get(peerId);
         PeerInfo newInfo = new PeerInfo(oldInfo.peerId(), oldInfo.address(), now);
         peersStorage.put(peerId, newInfo);
 
-        Set<String> oldFiles = peerToFiles.get(peerId);
+        Set<String> oldFiles = peerToFiles.getOrDefault(peerId, ConcurrentHashMap.newKeySet());
         Set<String> newFiles = ConcurrentHashMap.newKeySet();
         newFiles.addAll(fileIds);
 
-        Set<String> deletedFiles = ConcurrentHashMap.newKeySet();
-        deletedFiles.addAll(oldFiles);
-        deletedFiles.removeAll(newFiles);
-
-        Set<String> addedFiles = ConcurrentHashMap.newKeySet();
-        deletedFiles.addAll(newFiles);
-        deletedFiles.removeAll(oldFiles);
-
-        for (String file : deletedFiles) {
-            Set<String> peers = fileToPeer.get(file);
-            peers.remove(peerId);
-            fileToPeer.put(file, peers);
+        for (String fileId : newFiles) {
+            if (!oldFiles.contains(fileId)) {
+                fileToPeer.computeIfAbsent(fileId, k ->
+                        ConcurrentHashMap.newKeySet()).add(peerId);
+            }
         }
-        for (String file : addedFiles) {
 
+        for (String fileId : oldFiles) {
+            if (!newFiles.contains(fileId)) {
+                Set<String> peers = fileToPeer.get(fileId);
+                if (peers != null) {
+                    peers.remove(peerId);
+                }
+            }
         }
 
         peerToFiles.put(peerId, newFiles);
@@ -68,10 +63,16 @@ public class InMemoryPeerRepository implements PeerRepository {
     @Override
     public List<PeerInfo> findAvailablePeers(String fileId) {
         Set<String> peerIds = fileToPeer.get(fileId);
-        List<PeerInfo> peerInfos = new ArrayList<>();
+        if (peerIds == null || peerIds.isEmpty()) {
+            return Collections.emptyList();
+        }
 
+        List<PeerInfo> peerInfos = new ArrayList<>();
         for (String peerId : peerIds) {
-            peerInfos.add(peersStorage.get(peerId));
+            PeerInfo info = peersStorage.get(peerId);
+            if (info != null) {
+                peerInfos.add(info);
+            }
         }
 
         return peerInfos;
@@ -79,17 +80,20 @@ public class InMemoryPeerRepository implements PeerRepository {
 
     @Override
     public void deleteDeadPeers(Instant threshold) {
-        for (Map.Entry<String, PeerInfo> mapEntry : peersStorage.entrySet()) {
-            String peerId = mapEntry.getKey();
-            PeerInfo info = mapEntry.getValue();
+        for (Map.Entry<String, PeerInfo> entry : peersStorage.entrySet()) {
+            String peerId = entry.getKey();
+            PeerInfo info = entry.getValue();
+
             if (info.lastSeen().isBefore(threshold)) {
                 peersStorage.remove(peerId);
-                Set<String> files = peerToFiles.get(peerId);
-                peerToFiles.remove(peerId);
-                for (String file : files) {
-                    Set<String> peers = fileToPeer.get(file);
-                    peers.remove(peerId);
-                    fileToPeer.put(file, peers);
+                Set<String> files = peerToFiles.remove(peerId);
+                if (files != null) {
+                    for (String file : files) {
+                        Set<String> peers = fileToPeer.get(file);
+                        if (peers != null) {
+                            peers.remove(peerId);
+                        }
+                    }
                 }
             }
         }
