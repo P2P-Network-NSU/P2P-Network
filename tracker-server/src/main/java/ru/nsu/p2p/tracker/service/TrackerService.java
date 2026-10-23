@@ -5,12 +5,7 @@ import java.util.List;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
-import ru.nsu.p2p.common.model.CatalogPage;
-import ru.nsu.p2p.common.model.CatalogQuery;
-import ru.nsu.p2p.common.model.FileManifest;
-import ru.nsu.p2p.common.model.PeerAddress;
-import ru.nsu.p2p.common.model.PeerInfo;
-import ru.nsu.p2p.common.model.PeerList;
+import ru.nsu.p2p.common.model.*;
 import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
 import ru.nsu.p2p.tracker.repository.CatalogRepository;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
@@ -76,6 +71,36 @@ public class TrackerService {
     }
 
     public CatalogPage searchCatalog(CatalogQuery query) {
+        List<FileRecord> fileRecords= fileStorage.search(query);
 
+        List<CatalogEntry> catalogEntries = fileRecords.stream()
+            .map(record ->
+                new CatalogEntry(
+                    record.manifest().fileId(),
+                    record.title(),
+                    record.description(),
+                    record.manifest().originalName(),
+                    record.manifest().sizeBytes(),
+                    record.manifest().mediaType(),
+                    peerStorage.findAvailablePeers(record.manifest().fileId()).size()
+                ))
+            .toList();
+
+        long nextOffset = (fileRecords.size() < query.limit()) ? (0) : (query.offset() + query.limit());
+
+        return new CatalogPage(catalogEntries, nextOffset);
+    }
+
+    public FileManifest getManifest(String fileId) {
+        return fileStorage.getManifest(fileId)
+            .orElseThrow(
+                () -> new ClientOperationException(
+                    new OperationError(
+                            ErrorCode.NOT_FOUND,
+                    "Манифест не найден",
+                    false
+                    )
+                )
+            );
     }
 }
