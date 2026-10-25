@@ -1,18 +1,34 @@
 package ru.nsu.p2p.ui;
 
 import javafx.application.Application;
+import javafx.beans.property.ReadOnlyDoubleWrapper;
+import javafx.beans.property.ReadOnlyLongWrapper;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 
 import javafx.stage.FileChooser;
 import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import javafx.scene.control.ListView;
+// Stage - Окно
+// Scene - Содержимое окна
+// Label - Надпись
+// Button - Кнопочка
+// VBox - Контейнер для вертикального размещения элементов
+// BorderPane - окно с областями top, left, right, center, bottom
+// ListView - элемент интерфейса со списком строк
+// TableView - таблица
 
 public final class P2pApplication extends Application {
 
@@ -21,20 +37,14 @@ public final class P2pApplication extends Application {
     }
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws IOException {
 
-        // Stage - Окно
-        // Scene - Содержимое окна
-        // Label - Надпись
-        // Button - Кнопочка
-        // VBox - Контейнер для вертикального размещения элементов
-        // BorderPane - окно с областями top, left, right, center, bottom
-        // ListView - элемент интерфейса со списком строк
+        Path sharedDirectory = createSharedDirectory();
 
         BorderPane root = new BorderPane();
 
         // Окно с файлами пользователя
-        VBox myFilesView = createMyFilesView(stage);
+        VBox myFilesView = createMyFilesView(stage, sharedDirectory);
 
         // Окно с каталогом сети
         VBox catalogNetworkView = createCatalogNetworkView();
@@ -85,12 +95,48 @@ public final class P2pApplication extends Application {
         return new VBox(10, myFilesButton, catalogNetworkButton, downloadsButton);
     }
 
-    private static VBox createMyFilesView(Stage stage) {
-        Label myFilesLabel = new Label("Ваши файлы, доступные в сети:");
+    private static VBox createMyFilesView(Stage stage, Path sharedDirectory) throws IOException {
+        Label myFilesLabel = new Label("Ваши файлы, доступные в сети");
+        Label conditionLabel = new Label("");
         Button chooseFileButton = new Button("Выбрать файл");
         Button removeButton = new Button("Убрать из списка");
 
-        ListView<File> files = new ListView<>();
+        TableView<File> files = new TableView<>();
+        TableColumn<File, String> nameColumn = new TableColumn<>("Имя");
+        TableColumn<File, Number> sizeColumn = new TableColumn<>("Размер, Мбайт");
+
+        nameColumn.setCellValueFactory(cellData -> {
+            File file = cellData.getValue();
+            String name = file.getName();
+
+            return new ReadOnlyStringWrapper(name);
+        });
+
+        sizeColumn.setCellValueFactory(cellData -> {
+            File file = cellData.getValue();
+            return new ReadOnlyLongWrapper(file.length());
+        });
+
+        sizeColumn.setCellFactory(column -> new TableCell<File, Number>() {
+            @Override
+            protected void updateItem(Number bytes, boolean empty) {
+                super.updateItem(bytes, empty);
+
+                if (empty || bytes == null) {
+                    setText(null);
+                } else {
+                    double sizeInMiB = bytes.doubleValue() / (1024.0 * 1024);
+                    String text = String.format("%.3f", sizeInMiB);
+                    setText(text);
+                }
+            }
+        });
+
+        files.getColumns().add(nameColumn);
+        files.getColumns().add(sizeColumn);
+
+        File[] sharedFiles = readSharedFiles(sharedDirectory);
+        files.getItems().setAll(sharedFiles);
 
         removeButton.setOnAction(event -> {
             // getSelectionModel() - объект, который управляет выделением строк
@@ -99,7 +145,7 @@ public final class P2pApplication extends Application {
 
             if (index >= 0) {
                 files.getItems().remove(index);
-                myFilesLabel.setText("Файлов в списке: " + files.getItems().size());
+                conditionLabel.setText("Файлов в списке: " + files.getItems().size());
             }
         });
         chooseFileButton.setOnAction(event -> {
@@ -114,8 +160,12 @@ public final class P2pApplication extends Application {
             }
         });
 
-        VBox myFilesView = new VBox(16, myFilesLabel, chooseFileButton, removeButton, files);
-        myFilesView.setAlignment(Pos.CENTER);
+        HBox fileActions = new HBox(10, chooseFileButton, removeButton);
+        VBox myFilesView = new VBox(16, myFilesLabel, conditionLabel, fileActions, files);
+        // Если в вертикальном контейнере появится дополнительное место, отдаем его списку files
+        VBox.setVgrow(files, Priority.ALWAYS);
+        myFilesView.setAlignment(Pos.TOP_LEFT);
+
         return myFilesView;
     }
 
@@ -125,5 +175,26 @@ public final class P2pApplication extends Application {
 
     private static VBox createDownloadsView() {
         return new VBox(new Label("Загрузки"));
+    }
+
+    private static Path createSharedDirectory() throws IOException {
+        String userHome = System.getProperty("user.home");
+        Path sharedDirectory = Path.of(userHome, ".p2p-client-NSU", "shared");
+
+        Files.createDirectories(sharedDirectory);
+
+        return sharedDirectory;
+    }
+
+    private static File[] readSharedFiles(Path sharedDirectory) throws IOException {
+        File directory = sharedDirectory.toFile();
+
+        File[] foundFiles = directory.listFiles(File::isFile);
+
+        if (foundFiles == null) {
+            throw new IOException("Не удалось прочитать папку: " + sharedDirectory);
+        }
+
+        return foundFiles;
     }
 }
