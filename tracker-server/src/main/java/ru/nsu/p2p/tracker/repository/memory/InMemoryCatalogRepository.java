@@ -1,18 +1,20 @@
 package ru.nsu.p2p.tracker.repository.memory;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import ru.nsu.p2p.common.model.CatalogQuery;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.tracker.repository.CatalogRepository;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class InMemoryCatalogRepository implements CatalogRepository {
 
     // key - fileId, value - fileRecord
     private final Map<String, FileRecord> storage;
 
-    public InMemoryCatalogRepository () {
+    public InMemoryCatalogRepository() {
         this.storage = new ConcurrentHashMap<>();
     }
 
@@ -30,14 +32,14 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     @Override
     public List<FileRecord> search(CatalogQuery query) {
         return storage.values().stream()
-                .filter(record -> matchesSearchText(record, query.text()))
-                .sorted(Comparator.comparing(record -> record.manifest().fileId()))
-                .skip(query.offset())
-                .limit(query.limit())
-                .toList();
+            .filter(record -> matchesSearchText(record, query.text()))
+            .sorted(Comparator.comparing(record -> record.manifest().fileId()))
+            .skip(query.offset())
+            .limit(query.limit())
+            .toList();
     }
 
-    private boolean matchesSearchText (FileRecord record, String searchText) {
+    private boolean matchesSearchText(FileRecord record, String searchText) {
         if (searchText == null || searchText.isBlank()) {
             return true;
         }
@@ -49,15 +51,11 @@ public class InMemoryCatalogRepository implements CatalogRepository {
         }
 
         if (record.description() != null &&
-                record.description().toLowerCase().contains(searchLower)) {
+            record.description().toLowerCase().contains(searchLower)) {
             return true;
         }
 
-        if (record.manifest().originalName() != null &&
-                record.manifest().originalName().toLowerCase().contains(searchLower)) {
-            return true;
-        }
-
-        return false;
+        return record.manifest().originalName() != null &&
+            record.manifest().originalName().toLowerCase().contains(searchLower);
     }
 }

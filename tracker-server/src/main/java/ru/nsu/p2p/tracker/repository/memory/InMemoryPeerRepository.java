@@ -1,7 +1,11 @@
 package ru.nsu.p2p.tracker.repository.memory;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import ru.nsu.p2p.common.model.PeerInfo;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
@@ -42,7 +46,7 @@ public class InMemoryPeerRepository implements PeerRepository {
         for (String fileId : newFiles) {
             if (!oldFiles.contains(fileId)) {
                 fileToPeer.computeIfAbsent(fileId, k ->
-                        ConcurrentHashMap.newKeySet()).add(peerId);
+                    ConcurrentHashMap.newKeySet()).add(peerId);
             }
         }
 
