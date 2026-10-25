@@ -94,9 +94,9 @@ public class TrackerService {
                 ))
             .toList();
 
-        long nextOffset = (fileRecords.size() < query.limit()) ?
-            (0) :
-            (query.offset() + query.limit());
+        long nextOffset = fileRecords.size() < query.limit() ?
+            0 :
+            query.offset() + query.limit();
 
         return new CatalogPage(catalogEntries, nextOffset);
     }
