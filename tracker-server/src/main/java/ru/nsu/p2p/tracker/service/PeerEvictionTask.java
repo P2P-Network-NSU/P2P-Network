@@ -1,10 +1,9 @@
 package ru.nsu.p2p.tracker.service;
 
+import java.time.Instant;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
 
-import java.time.Instant;
-
-public class PeerEvictionTask implements Runnable{
+public class PeerEvictionTask implements Runnable {
 
     private final PeerRepository peerStorage;
 
@@ -19,7 +18,7 @@ public class PeerEvictionTask implements Runnable{
             peerStorage.deleteDeadPeers(threshold);
         } catch (Exception e) {
             System.err.println("Критическая ошибка в уборщике мертвичины" +
-                    "(неактивных пиров)" + e.getMessage());
+                "(неактивных пиров)" + e.getMessage());
             e.printStackTrace();
         }
     }

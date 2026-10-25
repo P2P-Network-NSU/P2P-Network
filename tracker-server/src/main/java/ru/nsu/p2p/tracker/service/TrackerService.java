@@ -5,7 +5,13 @@ import java.util.List;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
-import ru.nsu.p2p.common.model.*;
+import ru.nsu.p2p.common.model.CatalogEntry;
+import ru.nsu.p2p.common.model.CatalogPage;
+import ru.nsu.p2p.common.model.CatalogQuery;
+import ru.nsu.p2p.common.model.FileManifest;
+import ru.nsu.p2p.common.model.PeerAddress;
+import ru.nsu.p2p.common.model.PeerInfo;
+import ru.nsu.p2p.common.model.PeerList;
 import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
 import ru.nsu.p2p.tracker.repository.CatalogRepository;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
@@ -32,7 +38,9 @@ public class TrackerService {
         );
     }
 
-    public void updateHeartbeat(String peerId, List<String> fileIds) throws ClientOperationException {
+    public void updateHeartbeat(String peerId, List<String> fileIds)
+        throws ClientOperationException
+    {
         boolean status = peerStorage.updateHeartBeat(peerId, fileIds, Instant.now());
         if (!status) {
             OperationError error = new OperationError(
@@ -45,10 +53,10 @@ public class TrackerService {
     }
 
     public void publishFile(FileManifest manifest, String title, String description) {
-        if (manifest == null            ||
-            manifest.fileId() == null   ||
+        if (manifest == null ||
+            manifest.fileId() == null ||
             manifest.fileId().isBlank() ||
-            title == null               ||
+            title == null ||
             title.isBlank()
         ) {
             OperationError error = new OperationError(
@@ -71,7 +79,7 @@ public class TrackerService {
     }
 
     public CatalogPage searchCatalog(CatalogQuery query) {
-        List<FileRecord> fileRecords= fileStorage.search(query);
+        List<FileRecord> fileRecords = fileStorage.search(query);
 
         List<CatalogEntry> catalogEntries = fileRecords.stream()
             .map(record ->
@@ -86,7 +94,9 @@ public class TrackerService {
                 ))
             .toList();
 
-        long nextOffset = (fileRecords.size() < query.limit()) ? (0) : (query.offset() + query.limit());
+        long nextOffset = (fileRecords.size() < query.limit()) ?
+            (0) :
+            (query.offset() + query.limit());
 
         return new CatalogPage(catalogEntries, nextOffset);
     }
@@ -96,9 +106,9 @@ public class TrackerService {
             .orElseThrow(
                 () -> new ClientOperationException(
                     new OperationError(
-                            ErrorCode.NOT_FOUND,
-                    "Манифест не найден",
-                    false
+                        ErrorCode.NOT_FOUND,
+                        "Манифест не найден",
+                        false
                     )
                 )
             );
