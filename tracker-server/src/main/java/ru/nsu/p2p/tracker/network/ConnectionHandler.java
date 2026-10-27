@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.core.MessageHeader;
+import ru.nsu.p2p.common.protocol.tracker.TrackerErrorResponse;
 import ru.nsu.p2p.common.utils.MessageCodec;
 import ru.nsu.p2p.common.utils.ProtocolRules;
 import ru.nsu.p2p.tracker.handler.HandlerRegistry;
@@ -36,12 +38,15 @@ public class ConnectionHandler implements Runnable {
             Message inputMessage = codec.decode(fullMessage);
             MessageHandler<Message> messageHandler = registry.find(inputMessage.getType());
             if (messageHandler != null) {
-                Message outputMessage = messageHandler.handle(inputMessage);
-
-                if (outputMessage != null) {
-                    byte[] outputBytes = codec.encode(outputMessage);
-
-                    writeMessage(out, outputBytes);
+                try {
+                    Message outputMessage = messageHandler.handle(inputMessage);
+                    if (outputMessage != null) {
+                        byte[] outputBytes = codec.encode(outputMessage);
+                        writeMessage(out, outputBytes);
+                    }
+                } catch (ClientOperationException e) {
+                    var errorResponse = new TrackerErrorResponse(e.getError());
+                    writeMessage(out, codec.encode(errorResponse));
                 }
             } else {
                 System.err.println("Нет обработчика для типа: " + inputMessage.getType());
