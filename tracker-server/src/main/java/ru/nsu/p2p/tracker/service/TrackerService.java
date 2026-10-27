@@ -79,7 +79,7 @@ public class TrackerService {
     }
 
     public CatalogPage searchCatalog(CatalogQuery query) {
-        List<FileRecord> fileRecords = fileStorage.search(query);
+        List<CatalogRepository.FileRecord> fileRecords = fileStorage.search(query);
 
         List<CatalogEntry> catalogEntries = fileRecords.stream()
             .map(record ->
