@@ -19,3 +19,12 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+tasks.register('runPeerServer', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.nsu.p2p.client.PeerFileServer'
+}
+tasks.register('runPeerClient', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.nsu.p2p.client.PeerFileClient'
+}
