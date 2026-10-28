@@ -40,7 +40,7 @@ public class TcpServer {
                     Socket clientSocket = serverSocket.accept();
 
                     System.out.println("Подключился пир с адресом: " +
-                        clientSocket.getLocalAddress());
+                        clientSocket.getInetAddress());
 
                     ConnectionHandler connectionHandler = new ConnectionHandler(
                         clientSocket,
