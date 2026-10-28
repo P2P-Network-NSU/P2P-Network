@@ -38,6 +38,10 @@ public class TcpServer {
             try {
                 while (running) {
                     Socket clientSocket = serverSocket.accept();
+
+                    System.out.println("Подключился пир с адресом: " +
+                        clientSocket.getLocalAddress());
+
                     ConnectionHandler connectionHandler = new ConnectionHandler(
                         clientSocket,
                         codec,
