@@ -1,6 +1,7 @@
 package ru.nsu.p2p.common.utils;
 
 import ru.nsu.p2p.common.protocol.core.Message;
+import ru.nsu.p2p.common.protocol.core.ProtocolRules;
 
 /**
  * Контракт сериализатора/десериализатора сетевых сообщений.
