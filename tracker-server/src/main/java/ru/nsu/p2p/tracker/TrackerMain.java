@@ -23,7 +23,7 @@ import ru.nsu.p2p.tracker.service.TrackerService;
 
 public final class TrackerMain {
 
-    static void main() {
+    public static void main(String[] args) {
         final CatalogRepository fileStorage = new InMemoryCatalogRepository();
         final PeerRepository peerStorage = new InMemoryPeerRepository();
         final TrackerService service = new TrackerService(peerStorage, fileStorage);
