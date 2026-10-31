@@ -61,8 +61,17 @@ public class ConnectionHandler implements Runnable {
     }
 
     private byte[] readMessage(DataInputStream in) throws IOException {
+        // защита от медленного Лориса
+        socket.setSoTimeout(5_000);
+        long startTime = System.currentTimeMillis();
+
         byte[] headerBytes = new byte[MessageHeader.BYTES];
         in.readFully(headerBytes);
+
+        if (System.currentTimeMillis() - startTime > 30_000) {
+            throw new IOException("Превышено время чтения заголовка "
+                + "(Атака медленным Лорисом)");
+        }
 
         ByteBuffer headerBuffer = ByteBuffer.wrap(headerBytes);
 
@@ -80,6 +89,11 @@ public class ConnectionHandler implements Runnable {
 
         byte[] payload = new byte[payloadLength];
         in.readFully(payload);
+
+        if (System.currentTimeMillis() - startTime > 60_000) {
+            throw new IOException("Превышено время чтения тела сообщения "
+                + "(Атака медленным Лорисом)");
+        }
 
         byte[] fullMessage = Arrays.copyOf(headerBytes,
             headerBytes.length + payload.length);
