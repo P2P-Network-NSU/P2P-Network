@@ -76,11 +76,17 @@ public class ConnectionHandler implements Runnable {
         ByteBuffer headerBuffer = ByteBuffer.wrap(headerBytes);
 
         short magic = headerBuffer.getShort();
-        if (!validateProtocol(magic)) {
+        if (!validateMagic(magic)) {
             throw new IOException("Неверный Magic Byte: " + magic);
         }
 
         byte version = headerBuffer.get();
+        if (!validateProtocolVersion(version)) {
+            throw new IOException("Несовместимый по версии протокол\n"
+                + "Пришедшая версия: " + version + "\nОжидаемая версия: "
+                + ProtocolRules.PROTOCOL_VERSION);
+        }
+
         byte type = headerBuffer.get();
         int payloadLength = headerBuffer.getInt();
         if (!validatePayloadLength(payloadLength)) {
@@ -108,8 +114,12 @@ public class ConnectionHandler implements Runnable {
         out.flush();
     }
 
-    private boolean validateProtocol(short magic) {
+    private boolean validateMagic(short magic) {
         return magic == ProtocolRules.MAGIC_BYTES;
+    }
+
+    private boolean validateProtocolVersion(byte version) {
+        return version == ProtocolRules.PROTOCOL_VERSION;
     }
 
     private boolean validatePayloadLength(int length) {
