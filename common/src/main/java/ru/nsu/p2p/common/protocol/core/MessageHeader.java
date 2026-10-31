@@ -5,7 +5,7 @@ package ru.nsu.p2p.common.protocol.core;
  * Структура (8 байт):
  * [0-1] magic         (short) - Магическое число для валидации протокола (0x5032).
  * [2]   version       (byte)  - Версия протокола.
- * [3]   type          (byte)  - Тип сообщения (ordinal из enum MessageType).
+ * [3]   type          (byte)  - Тип сообщения (id типа из enum MessageType).
  * [4-7] payloadLength (int)   - Длина следующего за заголовком тела сообщения (в байтах).
  */
 public record MessageHeader(
