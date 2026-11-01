@@ -12,14 +12,13 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-
 import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javafx.scene.control.Alert;
+import java.nio.file.FileAlreadyExistsException;
 
 // Stage - Окно
 // Scene - Содержимое окна
@@ -39,7 +38,33 @@ public final class P2pApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
 
-        Path sharedDirectory = createSharedDirectory();
+        Path sharedDirectory;
+
+        try {
+            sharedDirectory = createSharedDirectory();
+        } catch (FileAlreadyExistsException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+
+            alert.setTitle("Ошибка запуска");
+            alert.setHeaderText("Не удалось создать папку раздач");
+            alert.setContentText(
+                    "Путь уже занят: " + e.getFile()
+                            + "\nПереименуйте или переместите мешающий файл "
+                            + "и запустите приложение снова."
+            );
+
+            alert.showAndWait();
+            return;
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+
+            alert.setTitle("Ошибка запуска");
+            alert.setHeaderText("Не удалось создать папку раздач");
+            alert.setContentText("Проверьте путь и права доступа для папки:\n" + e.getMessage());
+
+            alert.showAndWait();
+            return;
+        }
 
         BorderPane root = new BorderPane();
 
