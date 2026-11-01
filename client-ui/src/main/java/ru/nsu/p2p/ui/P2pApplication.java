@@ -1,24 +1,32 @@
 package ru.nsu.p2p.ui;
 
 import javafx.application.Application;
-import javafx.beans.property.ReadOnlyDoubleWrapper;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.FileChooser;
+
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javafx.scene.control.Alert;
 import java.nio.file.FileAlreadyExistsException;
+import java.util.Objects;
+
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 // Stage - Окно
 // Scene - Содержимое окна
@@ -123,8 +131,10 @@ public final class P2pApplication extends Application {
     private static VBox createMyFilesView(Stage stage, Path sharedDirectory) throws IOException {
         Label myFilesLabel = new Label("Мои файлы");
         Label myFolderLabel = new Label("Папка: " + sharedDirectory);
-        Button chooseFileButton = new Button("Выбрать файл");
-        Button removeButton = new Button("Убрать из списка");
+        Button openFolderButton = new Button("Открыть папку");
+        Button addFileButton = new Button("Добавить файл...");
+        Button deleteButton = new Button("Удалить файл");
+        Button refreshButton = new Button("Обновить");
 
         TableView<File> files = new TableView<>();
         TableColumn<File, String> nameColumn = new TableColumn<>("Имя");
@@ -163,7 +173,7 @@ public final class P2pApplication extends Application {
         File[] sharedFiles = readSharedFiles(sharedDirectory);
         files.getItems().setAll(sharedFiles);
 
-        removeButton.setOnAction(event -> {
+        deleteButton.setOnAction(event -> {
             // getSelectionModel() - объект, который управляет выделением строк
             // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
             int index = files.getSelectionModel().getSelectedIndex();
@@ -172,7 +182,7 @@ public final class P2pApplication extends Application {
                 files.getItems().remove(index);
             }
         });
-        chooseFileButton.setOnAction(event -> {
+        addFileButton.setOnAction(event -> {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Выбери файл");
 
@@ -183,9 +193,70 @@ public final class P2pApplication extends Application {
                 myFilesLabel.setText("Добавлен: " + file.getName() + ". Размер - " + file.length() + " байт.");
             }
         });
+        openFolderButton.setOnAction(event -> {
+            new Thread(() -> {
+                try {
+                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                        Desktop.getDesktop().open(sharedDirectory.toFile());
+                    } else {
+                        throw new UnsupportedOperationException("Действие открытия не поддерживается системой.");
+                    }
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.initOwner(stage);
+                        alert.setTitle("Ошибка");
+                        alert.setHeaderText("Не удалось открыть проводник");
+                        alert.setContentText(e.getMessage());
+                        alert.showAndWait();
+                    });
+                }
+            }).start();
+        });
+        refreshButton.setOnAction(event -> {
+            try {
+                File[] updatedFiles = readSharedFiles(sharedDirectory);
 
-        HBox fileActions = new HBox(10, chooseFileButton, removeButton);
-        VBox myFilesView = new VBox(16, myFilesLabel, myFolderLabel, fileActions, files);
+                files.getItems().setAll(updatedFiles);
+
+                myFilesLabel.setText("Список файлов обновлен (" + files.getItems().size() + ")");
+            } catch (IOException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.initOwner(stage);
+                alert.setTitle("Ошибка обновления");
+                alert.setHeaderText("Не удалось обновить список файлов");
+                alert.setContentText("Проверьте доступность папки:\n" + e.getMessage());
+                alert.showAndWait();
+            }
+        });
+
+        Image folderImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/folder.png")));
+        ImageView folderIcon = new ImageView(folderImg);
+        folderIcon.setFitWidth(20);
+        folderIcon.setFitHeight(20);
+        openFolderButton.setGraphic(folderIcon);
+
+        Image addImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/add.png")));
+        ImageView addIcon = new ImageView(addImg);
+        addIcon.setFitWidth(20);
+        addIcon.setFitHeight(20);
+        addFileButton.setGraphic(addIcon);
+
+        Image deleteImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/delete.png")));
+        ImageView deleteIcon = new ImageView(deleteImg);
+        deleteIcon.setFitWidth(20);
+        deleteIcon.setFitHeight(20);
+        deleteButton.setGraphic(deleteIcon);
+
+        Image refreshImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/refresh.png")));
+        ImageView refreshIcon = new ImageView(refreshImg);
+        refreshIcon.setFitWidth(20);
+        refreshIcon.setFitHeight(20);
+        refreshButton.setGraphic(refreshIcon);
+
+        HBox statusBar = new HBox();
+        HBox fileActions = new HBox(10, openFolderButton, addFileButton, deleteButton, refreshButton);
+        VBox myFilesView = new VBox(16, myFilesLabel, myFolderLabel, fileActions, files, statusBar);
         // Если в вертикальном контейнере появится дополнительное место, отдаем его списку files
         VBox.setVgrow(files, Priority.ALWAYS);
         myFilesView.setAlignment(Pos.TOP_LEFT);
