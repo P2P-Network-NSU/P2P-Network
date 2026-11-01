@@ -109,9 +109,27 @@ public final class P2pApplication extends Application {
                                                 VBox myFilesView,
                                                 VBox catalogNetworkView,
                                                 VBox downloadsView) {
-        Button myFilesButton = new Button("Мои файлы");
         Button catalogNetworkButton = new Button("Каталог сети");
         Button downloadsButton = new Button("Загрузки");
+        Button myFilesButton = new Button("Мои файлы");
+
+        Image networkImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/network.png")));
+        ImageView networkIcon = new ImageView(networkImg);
+        networkIcon.setFitWidth(20);
+        networkIcon.setFitHeight(20);
+        catalogNetworkButton.setGraphic(networkIcon);
+
+        Image downloadsImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/download.png")));
+        ImageView downloadsIcon = new ImageView(downloadsImg);
+        downloadsIcon.setFitWidth(20);
+        downloadsIcon.setFitHeight(20);
+        downloadsButton.setGraphic(downloadsIcon);
+
+        Image folderImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/folder.png")));
+        ImageView folderIcon = new ImageView(folderImg);
+        folderIcon.setFitWidth(20);
+        folderIcon.setFitHeight(20);
+        myFilesButton.setGraphic(folderIcon);
 
         myFilesButton.setOnAction(event -> {
             root.setCenter(myFilesView);
@@ -125,7 +143,7 @@ public final class P2pApplication extends Application {
             root.setCenter(downloadsView);
         });
 
-        return new VBox(10, myFilesButton, catalogNetworkButton, downloadsButton);
+        return new VBox(10, catalogNetworkButton, downloadsButton, myFilesButton);
     }
 
     private static VBox createMyFilesView(Stage stage, Path sharedDirectory) throws IOException {
