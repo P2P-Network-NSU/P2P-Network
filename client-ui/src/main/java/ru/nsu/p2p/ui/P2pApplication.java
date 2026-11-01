@@ -121,8 +121,8 @@ public final class P2pApplication extends Application {
     }
 
     private static VBox createMyFilesView(Stage stage, Path sharedDirectory) throws IOException {
-        Label myFilesLabel = new Label("Ваши файлы, доступные в сети");
-        Label conditionLabel = new Label("");
+        Label myFilesLabel = new Label("Мои файлы");
+        Label myFolderLabel = new Label("Папка: " + sharedDirectory);
         Button chooseFileButton = new Button("Выбрать файл");
         Button removeButton = new Button("Убрать из списка");
 
@@ -170,7 +170,6 @@ public final class P2pApplication extends Application {
 
             if (index >= 0) {
                 files.getItems().remove(index);
-                conditionLabel.setText("Файлов в списке: " + files.getItems().size());
             }
         });
         chooseFileButton.setOnAction(event -> {
@@ -186,7 +185,7 @@ public final class P2pApplication extends Application {
         });
 
         HBox fileActions = new HBox(10, chooseFileButton, removeButton);
-        VBox myFilesView = new VBox(16, myFilesLabel, conditionLabel, fileActions, files);
+        VBox myFilesView = new VBox(16, myFilesLabel, myFolderLabel, fileActions, files);
         // Если в вертикальном контейнере появится дополнительное место, отдаем его списку files
         VBox.setVgrow(files, Priority.ALWAYS);
         myFilesView.setAlignment(Pos.TOP_LEFT);
