@@ -196,10 +196,42 @@ public final class P2pApplication extends Application {
 
             File file = chooser.showOpenDialog(stage);
 
-            if (file != null) {
-                files.getItems().add(file);
-                myFilesLabel.setText("Добавлен: " + file.getName() + ". Размер - " + file.length() + " байт.");
-            }
+            new Thread(() -> {
+                if (file != null) {
+                    Path source = file.toPath();
+                    Path destination = sharedDirectory.resolve(file.getName());
+
+                    try {
+                        Files.copy(source, destination);
+                    } catch (FileAlreadyExistsException e) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+
+                        alert.setTitle("Ошибка копирования");
+                        alert.setHeaderText("Не удалось скопировать файл");
+                        alert.setContentText(
+                                "Файл " + e.getFile() + " уже есть в папке\n" + sharedDirectory.toString()
+                        );
+
+                        alert.showAndWait();
+                        return;
+                    } catch (IOException e) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+
+                        alert.setTitle("Ошибка копирования");
+                        alert.setHeaderText("Не удалось скопировать файл");
+                        alert.setContentText(
+                                "Не удалось скопировать файл «" + file.getName() + "».\n"
+                                        + "Причина: " + e.getMessage()
+                        );
+
+                        alert.showAndWait();
+                        return;
+                    }
+                    files.getItems().add(destination.toFile());
+                    //myFilesLabel.setText("Добавлен: " + file.getName() + ". Размер - " + file.length() + " байт.");
+                }
+
+            }).start();
         });
         openFolderButton.setOnAction(event -> {
             new Thread(() -> {
