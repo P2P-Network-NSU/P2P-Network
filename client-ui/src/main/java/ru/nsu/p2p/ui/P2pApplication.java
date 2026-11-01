@@ -112,24 +112,14 @@ public final class P2pApplication extends Application {
         Button catalogNetworkButton = new Button("Каталог сети");
         Button downloadsButton = new Button("Загрузки");
         Button myFilesButton = new Button("Мои файлы");
+        Button streamButton = new Button("Стриминг");
+        Button settingsButton = new Button("Настройки");
 
-        Image networkImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/network.png")));
-        ImageView networkIcon = new ImageView(networkImg);
-        networkIcon.setFitWidth(20);
-        networkIcon.setFitHeight(20);
-        catalogNetworkButton.setGraphic(networkIcon);
-
-        Image downloadsImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/download.png")));
-        ImageView downloadsIcon = new ImageView(downloadsImg);
-        downloadsIcon.setFitWidth(20);
-        downloadsIcon.setFitHeight(20);
-        downloadsButton.setGraphic(downloadsIcon);
-
-        Image folderImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/folder.png")));
-        ImageView folderIcon = new ImageView(folderImg);
-        folderIcon.setFitWidth(20);
-        folderIcon.setFitHeight(20);
-        myFilesButton.setGraphic(folderIcon);
+        catalogNetworkButton.setGraphic(createIcon("/icons/network.png"));
+        downloadsButton.setGraphic(createIcon("/icons/download.png"));
+        myFilesButton.setGraphic(createIcon("/icons/folder.png"));
+        streamButton.setGraphic(createIcon("/icons/stream.png"));
+        settingsButton.setGraphic(createIcon("/icons/settings.png"));
 
         myFilesButton.setOnAction(event -> {
             root.setCenter(myFilesView);
@@ -143,7 +133,7 @@ public final class P2pApplication extends Application {
             root.setCenter(downloadsView);
         });
 
-        return new VBox(10, catalogNetworkButton, downloadsButton, myFilesButton);
+        return new VBox(10, catalogNetworkButton, downloadsButton, myFilesButton, streamButton, settingsButton);
     }
 
     private static VBox createMyFilesView(Stage stage, Path sharedDirectory) throws IOException {
@@ -248,29 +238,10 @@ public final class P2pApplication extends Application {
             }
         });
 
-        Image folderImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/folder.png")));
-        ImageView folderIcon = new ImageView(folderImg);
-        folderIcon.setFitWidth(20);
-        folderIcon.setFitHeight(20);
-        openFolderButton.setGraphic(folderIcon);
-
-        Image addImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/add.png")));
-        ImageView addIcon = new ImageView(addImg);
-        addIcon.setFitWidth(20);
-        addIcon.setFitHeight(20);
-        addFileButton.setGraphic(addIcon);
-
-        Image deleteImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/delete.png")));
-        ImageView deleteIcon = new ImageView(deleteImg);
-        deleteIcon.setFitWidth(20);
-        deleteIcon.setFitHeight(20);
-        deleteButton.setGraphic(deleteIcon);
-
-        Image refreshImg = new Image(Objects.requireNonNull(P2pApplication.class.getResourceAsStream("/icons/refresh.png")));
-        ImageView refreshIcon = new ImageView(refreshImg);
-        refreshIcon.setFitWidth(20);
-        refreshIcon.setFitHeight(20);
-        refreshButton.setGraphic(refreshIcon);
+        openFolderButton.setGraphic(createIcon("/icons/folder.png"));
+        addFileButton.setGraphic(createIcon("/icons/add.png"));
+        deleteButton.setGraphic(createIcon("/icons/delete.png"));
+        refreshButton.setGraphic(createIcon("/icons/refresh.png"));
 
         HBox statusBar = new HBox();
         HBox fileActions = new HBox(10, openFolderButton, addFileButton, deleteButton, refreshButton);
@@ -309,5 +280,19 @@ public final class P2pApplication extends Application {
         }
 
         return foundFiles;
+    }
+
+    private static ImageView createIcon(String path) {
+        var stream = P2pApplication.class.getResourceAsStream(path);
+        if (stream == null) {
+            return null;
+        }
+        // Загрузка с автоматическим масштабированием и сглаживанием
+        Image img = new Image(stream, 24, 24, true, true);
+        ImageView view = new ImageView(img);
+        view.setFitWidth(20);
+        view.setFitHeight(20);
+        view.setSmooth(true);
+        return view;
     }
 }
