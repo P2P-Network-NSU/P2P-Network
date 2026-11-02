@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import javax.swing.text.html.Option;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -211,4 +213,42 @@ class TrackerServiceTest {
         assertEquals(0, page.entries().get(1).availablePeerCount());
         assertEquals(0, page.nextOffset());
     }
+
+    @Test
+    void getManifest_happyPath_returnFileManifest() {
+        FileManifest manifest = new FileManifest(
+            "2",
+            "name2",
+            160,
+            10,
+            List.of("1234567", "3875464378"),
+            "mp3"
+        );
+
+        when(fileStorageMock.getManifest("2"))
+            .thenReturn(Optional.of(manifest));
+
+        FileManifest retManifest = service.getManifest("2");
+
+        assertEquals(manifest, retManifest);
+    }
+
+    @Test
+    void getManifest_nullFileId_throwException() {
+        ClientOperationException ex = assertThrows(
+            ClientOperationException.class,
+            () -> service.getManifest(null)
+        );
+        assertEquals(ErrorCode.INVALID_ARGUMENT, ex.getError().code());
+    }
+
+    @Test
+    void getManifest_fileDoesNotExists_throwException() {
+        ClientOperationException ex = assertThrows(
+            ClientOperationException.class,
+            () -> service.getManifest("123")
+        );
+        assertEquals(ErrorCode.NOT_FOUND, ex.getError().code());
+    }
+
 }
