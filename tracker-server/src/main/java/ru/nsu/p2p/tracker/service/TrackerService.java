@@ -29,6 +29,15 @@ public class TrackerService {
     }
 
     public PeerLeaseResponse registerPeer(String peerId, PeerAddress address) {
+        if (peerId == null || peerId.isBlank() || address == null) {
+            var error = new OperationError(
+                ErrorCode.INVALID_ARGUMENT,
+                "Передан пустой ид пира"
+                    + "или передан пустой адрес",
+                false
+            );
+            throw new ClientOperationException(error);
+        }
         PeerInfo info = new PeerInfo(peerId, address, Instant.now());
         peerStorage.register(info);
         return new PeerLeaseResponse(
