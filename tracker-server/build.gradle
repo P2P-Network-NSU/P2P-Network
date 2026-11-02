@@ -21,4 +21,5 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    systemProperty 'net.bytebuddy.experimental', 'true'
 }

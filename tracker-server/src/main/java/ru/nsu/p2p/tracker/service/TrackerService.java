@@ -79,6 +79,14 @@ public class TrackerService {
     }
 
     public PeerList getPeers(String fileId) {
+        if (fileId == null || fileId.isBlank()) {
+            var error = new OperationError(
+                ErrorCode.INVALID_ARGUMENT,
+                "Передан пустой ид файла",
+                false
+            );
+            throw new ClientOperationException(error);
+        }
         // Надо наверное как-то сортировать и возвращать небольшой список пиров, чтобы не возвращать
         // огромные списки, если пиров будет огромное количество.
         List<PeerInfo> peers = peerStorage.findAvailablePeers(fileId);
