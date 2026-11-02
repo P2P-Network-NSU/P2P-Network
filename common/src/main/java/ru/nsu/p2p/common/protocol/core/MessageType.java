@@ -10,15 +10,17 @@ package ru.nsu.p2p.common.protocol.core;
 public enum MessageType {
     // === Взаимодействие Клиент <-> Трекер ===
 
-    TRACKER_REGISTER_REQ    ((byte) 0x00), // Клиент сообщает Трекеру свой IP и порт для приема входящих соединений.
-    TRACKER_REGISTER_RES    ((byte) 0x01), // Трекер подтверждает регистрацию и выдает интервал для Heartbeat.
-    TRACKER_HEARTBEAT_REQ   ((byte) 0x02), // Клиент сообщает Трекеру, что он жив, и передает список раздаваемых файлов.
-    TRACKER_PUBLISH_REQ     ((byte) 0x03), // Клиент публикует новый файл (отправляет FileManifest).
-    TRACKER_CATALOG_REQ     ((byte) 0x04), // Клиент запрашивает страницу каталога (поиск).
-    TRACKER_CATALOG_RES     ((byte) 0x05), // Трекер возвращает результаты поиска (CatalogPage).
-    TRACKER_GET_PEERS_REQ   ((byte) 0x06), // Клиент запрашивает список пиров для конкретного файла.
-    TRACKER_GET_PEERS_RES   ((byte) 0x07), // Трекер возвращает список пиров (PeerList).
-    TRACKER_ERROR_RES       ((byte) 0x08), // Трекер сообщает об ошибке (например, неверный запрос).
+    TRACKER_REGISTER_REQ     ((byte) 0x00), // Клиент сообщает Трекеру свой IP и порт для приема входящих соединений.
+    TRACKER_REGISTER_RES     ((byte) 0x01), // Трекер подтверждает регистрацию и выдает интервал для Heartbeat.
+    TRACKER_HEARTBEAT_REQ    ((byte) 0x02), // Клиент сообщает Трекеру, что он жив, и передает список раздаваемых файлов.
+    TRACKER_PUBLISH_REQ      ((byte) 0x03), // Клиент публикует новый файл (отправляет FileManifest).
+    TRACKER_CATALOG_REQ      ((byte) 0x04), // Клиент запрашивает страницу каталога (поиск).
+    TRACKER_CATALOG_RES      ((byte) 0x05), // Трекер возвращает результаты поиска (CatalogPage).
+    TRACKER_GET_PEERS_REQ    ((byte) 0x06), // Клиент запрашивает список пиров для конкретного файла.
+    TRACKER_GET_PEERS_RES    ((byte) 0x07), // Трекер возвращает список пиров (PeerList).
+    TRACKER_ERROR_RES        ((byte) 0x08), // Трекер сообщает об ошибке (например, неверный запрос).
+    TRACKER_GET_MANIFEST_REQ ((byte) 0x09), // Клиент запрашивает манифест файла у трекера.
+    TRACKER_GET_MANIFEST_RES ((byte) 0x0A), // Трекер отправляет манифест файла клиенту.
 
     // === Взаимодействие Пир <-> Пир (P2P) ===
 
