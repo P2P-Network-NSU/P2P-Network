@@ -13,24 +13,22 @@ import ru.nsu.p2p.common.utils.ProtocolRules;
 public class DummyCodec implements MessageCodec {
     @Override
     public byte[] encode(Message message) {
-        // 1. Превращаем сообщение в простую строку (вместо сложной бинарной сериализации)
         String payloadStr = "";
         if (message instanceof RegisterPeerRequest req) {
             payloadStr = req.peerId() + "," + req.address().host() + "," + req.address().port();
         } else if (message instanceof PeerLeaseResponse res) {
-            payloadStr = res.address().host() + "," + res.address().port() + "," + res.heartbeatIntervalSeconds() + "," + res.leaseTtlSeconds();
+            payloadStr = res.address().host() + "," + res.address().port() + ","
+                + res.heartbeatIntervalSeconds() + "," + res.leaseTtlSeconds();
         }
 
         byte[] payloadBytes = payloadStr.getBytes(StandardCharsets.UTF_8);
 
-        // 2. Формируем правильный 8-байтовый заголовок
         ByteBuffer buffer = ByteBuffer.allocate(8 + payloadBytes.length);
         buffer.putShort(ProtocolRules.MAGIC_BYTES);
         buffer.put(ProtocolRules.PROTOCOL_VERSION);
         buffer.put(message.getType().getId());
         buffer.putInt(payloadBytes.length);
 
-        // 3. Добавляем payload
         buffer.put(payloadBytes);
 
         return buffer.array();
@@ -40,19 +38,16 @@ public class DummyCodec implements MessageCodec {
     public Message decode(byte[] data) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
-        // Читаем заголовок
         buffer.getShort(); // magic
         buffer.get();      // version
         byte typeId = buffer.get();
         int length = buffer.getInt();
 
-        // Читаем payload
         byte[] payloadBytes = new byte[length];
         buffer.get(payloadBytes);
         String payloadStr = new String(payloadBytes, StandardCharsets.UTF_8);
         String[] parts = payloadStr.split(",");
 
-        // Восстанавливаем объект
         MessageType type = MessageType.fromId(typeId);
         if (type == MessageType.TRACKER_REGISTER_REQ) {
             return new RegisterPeerRequest(parts[0], new PeerAddress(parts[1], Integer.parseInt(parts[2])));
