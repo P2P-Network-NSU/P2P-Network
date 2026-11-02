@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import ru.nsu.p2p.common.protocol.core.MessageType;
 import ru.nsu.p2p.common.utils.MessageCodec;
 import ru.nsu.p2p.tracker.handler.CatalogHandler;
+import ru.nsu.p2p.tracker.handler.GetManifestHandler;
 import ru.nsu.p2p.tracker.handler.GetPeersHandler;
 import ru.nsu.p2p.tracker.handler.HandlerRegistry;
 import ru.nsu.p2p.tracker.handler.HeartbeatHandler;
@@ -34,6 +35,7 @@ public final class TrackerMain {
         registry.register(MessageType.TRACKER_GET_PEERS_REQ, new GetPeersHandler(service));
         registry.register(MessageType.TRACKER_HEARTBEAT_REQ, new HeartbeatHandler(service));
         registry.register(MessageType.TRACKER_PUBLISH_REQ, new PublishHandler(service));
+        registry.register(MessageType.TRACKER_GET_MANIFEST_REQ, new GetManifestHandler(service));
 
         final MessageCodec codec = null; // ждем-с реализацию со стороны клиента
         final TcpServer server = new TcpServer(45500, codec, registry);
