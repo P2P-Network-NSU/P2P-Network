@@ -118,4 +118,16 @@ public class TrackerService {
         return new CatalogPage(catalogEntries, nextOffset);
     }
 
+    public FileManifest getManifest(String fileId) {
+        return fileStorage.getManifest(fileId)
+            .orElseThrow(
+                () -> new ClientOperationException(
+                    new OperationError(
+                        ErrorCode.NOT_FOUND,
+                        "Манифест не найден",
+                        false
+                    )
+                )
+            );
+    }
 }
