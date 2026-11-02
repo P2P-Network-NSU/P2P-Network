@@ -119,6 +119,14 @@ public class TrackerService {
     }
 
     public FileManifest getManifest(String fileId) {
+        if (fileId == null || fileId.isBlank()) {
+            var error = new OperationError(
+                ErrorCode.INVALID_ARGUMENT,
+                "Передан пустой ид файла",
+                false
+            );
+            throw new ClientOperationException(error);
+        }
         return fileStorage.getManifest(fileId)
             .orElseThrow(
                 () -> new ClientOperationException(
