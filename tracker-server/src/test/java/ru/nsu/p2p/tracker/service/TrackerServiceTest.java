@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import ru.nsu.p2p.common.model.CatalogQuery;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.common.model.PeerInfo;
+import ru.nsu.p2p.common.model.PeerList;
 import ru.nsu.p2p.tracker.repository.CatalogRepository;
 import ru.nsu.p2p.tracker.repository.CatalogRepository.FileRecord;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
@@ -140,7 +142,32 @@ class TrackerServiceTest {
     }
 
     @Test
-    void getPeers_
+    void getPeers_happyPath_returnList() {
+        List<PeerInfo> infos = new ArrayList<>();
+        for (int i = 0; i < 100; ++i) {
+            infos.add(new PeerInfo(
+                Integer.toString(i),
+                new PeerAddress("1", 1),
+                Instant.now()
+            ));
+        }
+        when(peerStorageMock.findAvailablePeers(anyString()))
+            .thenReturn(infos);
+
+        PeerList limitedList = service.getPeers("1");
+
+        assertEquals("1", limitedList.fileId());
+        assertEquals(50, limitedList.peers().size());
+    }
+
+    @Test
+    void getPeers_negatePath_returnList() {
+        ClientOperationException ex = assertThrows(
+            ClientOperationException.class,
+            () -> service.getPeers("  ")
+        );
+        assertEquals(ErrorCode.INVALID_ARGUMENT, ex.getError().code());
+    }
 
     @Test
     void searchCatalog_anyPath_returnCatalogPage() {
@@ -182,5 +209,6 @@ class TrackerServiceTest {
         assertEquals("2", page.entries().get(1).fileId());
         assertEquals(2, page.entries().get(0).availablePeerCount());
         assertEquals(0, page.entries().get(1).availablePeerCount());
+        assertEquals(0, page.nextOffset());
     }
 }
