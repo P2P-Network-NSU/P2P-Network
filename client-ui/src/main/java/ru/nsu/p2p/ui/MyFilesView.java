@@ -158,10 +158,10 @@ public class MyFilesView {
             }
         });
 
-        openFolderButton.setGraphic(createIcon("/icons/folder.png"));
-        addFileButton.setGraphic(createIcon("/icons/add.png"));
-        deleteButton.setGraphic(createIcon("/icons/delete.png"));
-        refreshButton.setGraphic(createIcon("/icons/refresh.png"));
+        openFolderButton.setGraphic(createIcon("/icons/folder.svg"));
+        addFileButton.setGraphic(createIcon("/icons/add.svg"));
+        deleteButton.setGraphic(createIcon("/icons/delete.svg"));
+        refreshButton.setGraphic(createIcon("/icons/refresh.svg"));
 
         HBox statusBar = new HBox();
         HBox fileActions = new HBox(10, openFolderButton, addFileButton, deleteButton, refreshButton);

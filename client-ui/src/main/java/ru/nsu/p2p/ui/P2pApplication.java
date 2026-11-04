@@ -107,11 +107,11 @@ public final class P2pApplication extends Application {
         Button streamButton = new Button("Стриминг");
         Button settingsButton = new Button("Настройки");
 
-        catalogNetworkButton.setGraphic(createIcon("/icons/network.png"));
-        downloadsButton.setGraphic(createIcon("/icons/download.png"));
-        myFilesButton.setGraphic(createIcon("/icons/folder.png"));
-        streamButton.setGraphic(createIcon("/icons/stream.png"));
-        settingsButton.setGraphic(createIcon("/icons/settings.png"));
+        catalogNetworkButton.setGraphic(createIcon("/icons/network.svg"));
+        downloadsButton.setGraphic(createIcon("/icons/download.svg"));
+        myFilesButton.setGraphic(createIcon("/icons/folder.svg"));
+        streamButton.setGraphic(createIcon("/icons/stream.svg"));
+        settingsButton.setGraphic(createIcon("/icons/settings.svg"));
 
         myFilesButton.setOnAction(event -> {
             root.setCenter(myFilesView);
