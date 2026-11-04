@@ -79,6 +79,8 @@ public class MyFilesView {
             alert.showAndWait();
         }
 
+        deleteButton.disableProperty().bind(files.getSelectionModel().selectedItemProperty().isNull());
+
         deleteButton.setOnAction(event -> {
             // getSelectionModel() - объект, который управляет выделением строк
             // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
