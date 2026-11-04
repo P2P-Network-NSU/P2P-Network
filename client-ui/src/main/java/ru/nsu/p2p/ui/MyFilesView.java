@@ -24,7 +24,7 @@ import static ru.nsu.p2p.ui.SharedFilesService.readSharedFiles;
 import static ru.nsu.p2p.ui.Utils.createIcon;
 
 public class MyFilesView {
-    public static VBox createMyFilesView(Stage stage, Path sharedDirectory) throws IOException {
+    public static VBox createMyFilesView(Stage stage, Path sharedDirectory) {
         Label myFilesLabel = new Label("Мои файлы");
         Label myFolderLabel = new Label("Папка: " + sharedDirectory);
         Button openFolderButton = new Button("Открыть папку");
@@ -66,8 +66,18 @@ public class MyFilesView {
         files.getColumns().add(nameColumn);
         files.getColumns().add(sizeColumn);
 
-        File[] sharedFiles = readSharedFiles(sharedDirectory);
-        files.getItems().setAll(sharedFiles);
+        try {
+            File[] sharedFiles = readSharedFiles(sharedDirectory);
+            files.getItems().setAll(sharedFiles);
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.initOwner(stage);
+            alert.setTitle("Ошибка инициализации");
+            alert.setHeaderText("Не удалось прочитать общую папку");
+            alert.setContentText("Произошла ошибка при первоначальном чтении содержимого папки:\n"
+                    + sharedDirectory.toString() + "\n\nПричина: " + e.getMessage());
+            alert.showAndWait();
+        }
 
         deleteButton.setOnAction(event -> {
             // getSelectionModel() - объект, который управляет выделением строк
@@ -81,45 +91,40 @@ public class MyFilesView {
         addFileButton.setOnAction(event -> {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Выбери файл");
-
             File file = chooser.showOpenDialog(stage);
 
-            new Thread(() -> {
-                if (file != null) {
+            if (file != null) {
+                new Thread(() -> {
                     Path source = file.toPath();
                     Path destination = sharedDirectory.resolve(file.getName());
-
                     try {
                         Files.copy(source, destination);
+
+                        // Безопасное обновление UI из фонового потока
+                        Platform.runLater(() -> {
+                            files.getItems().add(destination.toFile());
+                            //myFilesLabel.setText("Добавлен: " + file.getName() + ". Размер - " + file.length() + " байт.");
+                        });
+
                     } catch (FileAlreadyExistsException e) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-
-                        alert.setTitle("Ошибка копирования");
-                        alert.setHeaderText("Не удалось скопировать файл");
-                        alert.setContentText(
-                                "Файл " + e.getFile() + " уже есть в папке\n" + sharedDirectory.toString()
-                        );
-
-                        alert.showAndWait();
-                        return;
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.WARNING);
+                            alert.setTitle("Ошибка копирования");
+                            alert.setHeaderText("Не удалось скопировать файл");
+                            alert.setContentText("Файл " + e.getFile() + " уже есть в папке\n" + sharedDirectory.toString());
+                            alert.showAndWait();
+                        });
                     } catch (IOException e) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-
-                        alert.setTitle("Ошибка копирования");
-                        alert.setHeaderText("Не удалось скопировать файл");
-                        alert.setContentText(
-                                "Не удалось скопировать файл «" + file.getName() + "».\n"
-                                        + "Причина: " + e.getMessage()
-                        );
-
-                        alert.showAndWait();
-                        return;
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.WARNING);
+                            alert.setTitle("Ошибка копирования");
+                            alert.setHeaderText("Не удалось скопировать файл");
+                            alert.setContentText("Не удалось скопировать файл " + file.getName() + ".\nПричина: " + e.getMessage());
+                            alert.showAndWait();
+                        });
                     }
-                    files.getItems().add(destination.toFile());
-                    //myFilesLabel.setText("Добавлен: " + file.getName() + ". Размер - " + file.length() + " байт.");
-                }
-
-            }).start();
+                }).start();
+            }
         });
         openFolderButton.setOnAction(event -> {
             new Thread(() -> {
