@@ -84,8 +84,32 @@ public class MyFilesView {
             // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
             int index = files.getSelectionModel().getSelectedIndex();
 
-            if (index >= 0) {
-                files.getItems().remove(index);
+            if (index < 0) {
+                return;
+            }
+
+            File file = files.getItems().get(index);
+
+            if (file != null) {
+                new Thread(() -> {
+                    try {
+                        Files.delete(sharedDirectory.resolve(file.getName()));
+
+                        Platform.runLater(() -> {
+                            files.getItems().remove(index);
+                        });
+                    } catch (IOException e) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.WARNING);
+                            alert.initOwner(stage);
+                            alert.setTitle("Ошибка удаления");
+                            alert.setHeaderText("Не удалось удалить файл");
+                            alert.setContentText("Файл " + file.getName() + " не удалось удалить.\n" +
+                                    "Причина: " + e.getMessage());
+                            alert.showAndWait();
+                        });
+                    }
+                }).start();
             }
         });
         addFileButton.setOnAction(event -> {
@@ -109,6 +133,7 @@ public class MyFilesView {
                     } catch (FileAlreadyExistsException e) {
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.WARNING);
+                            alert.initOwner(stage);
                             alert.setTitle("Ошибка копирования");
                             alert.setHeaderText("Не удалось скопировать файл");
                             alert.setContentText("Файл " + e.getFile() + " уже есть в папке\n" + sharedDirectory.toString());
@@ -117,6 +142,7 @@ public class MyFilesView {
                     } catch (IOException e) {
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.WARNING);
+                            alert.initOwner(stage);
                             alert.setTitle("Ошибка копирования");
                             alert.setHeaderText("Не удалось скопировать файл");
                             alert.setContentText("Не удалось скопировать файл " + file.getName() + ".\nПричина: " + e.getMessage());

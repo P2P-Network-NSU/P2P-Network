@@ -45,6 +45,7 @@ public final class P2pApplication extends Application {
         } catch (FileAlreadyExistsException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
 
+            alert.initOwner(stage);
             alert.setTitle("Ошибка запуска");
             alert.setHeaderText("Не удалось создать папку раздач");
             alert.setContentText(
@@ -58,6 +59,7 @@ public final class P2pApplication extends Application {
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
 
+            alert.initOwner(stage);
             alert.setTitle("Ошибка запуска");
             alert.setHeaderText("Не удалось создать папку раздач");
             alert.setContentText("Проверьте путь и права доступа для папки:\n" + e.getMessage());
