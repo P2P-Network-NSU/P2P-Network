@@ -419,4 +419,39 @@ class FileAssemblerTest {
             }
         });
     }
+
+    @Test
+    void rejectsFileWithIncorrectFileId() throws IOException {
+        Path directory = createTargetDirectory();
+
+        FileManifest incorrectManifest = new FileManifest(
+                "0".repeat(64),
+                "test.txt",
+                7,
+                3,
+                List.of(ABC_HASH, DEF_HASH, G_HASH),
+                "text/plain"
+        );
+
+        try (FileAssembler assembler =
+                     new FileAssembler(incorrectManifest, directory)) {
+
+            assembler.acceptChunk(0, bytes("abc"));
+            assembler.acceptChunk(1, bytes("def"));
+            assembler.acceptChunk(2, bytes("g"));
+
+            assertThrows(
+                    IOException.class,
+                    assembler::finish
+            );
+        }
+
+        // Файл с неправильным fileId не должен публиковаться.
+        assertFalse(Files.exists(directory.resolve("test.txt")));
+
+        // Временные данные остаются для диагностики или повторной попытки.
+        assertTrue(Files.exists(directory.resolve("test.txt.part")));
+        assertTrue(Files.exists(directory.resolve("test.txt.part.state")));
+    }
+
 }
