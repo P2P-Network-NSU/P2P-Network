@@ -1,5 +1,11 @@
 package ru.nsu.p2p.tracker.test_client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,24 +16,17 @@ import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
 import ru.nsu.p2p.common.protocol.tracker.RegisterPeerRequest;
 import ru.nsu.p2p.tracker.handler.HandlerRegistry;
 import ru.nsu.p2p.tracker.handler.message_handlers.RegisterHandler;
-import ru.nsu.p2p.tracker.test_client.network.DummyCodec;
 import ru.nsu.p2p.tracker.network.TcpServer;
 import ru.nsu.p2p.tracker.repository.memory.InMemoryCatalogRepository;
 import ru.nsu.p2p.tracker.repository.memory.InMemoryPeerRepository;
 import ru.nsu.p2p.tracker.service.TrackerService;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.net.Socket;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import ru.nsu.p2p.tracker.test_client.network.DummyCodec;
 
 class TrackerIntegrationTest {
 
-    private TcpServer server;
     private final int TEST_PORT = 45501;
     private final DummyCodec codec = new DummyCodec();
+    private TcpServer server;
 
     @BeforeEach
     void startServer() throws Exception {

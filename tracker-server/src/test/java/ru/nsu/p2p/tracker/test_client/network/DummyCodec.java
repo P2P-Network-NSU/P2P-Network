@@ -11,6 +11,7 @@ import ru.nsu.p2p.common.utils.MessageCodec;
 import ru.nsu.p2p.common.utils.ProtocolRules;
 
 public class DummyCodec implements MessageCodec {
+
     @Override
     public byte[] encode(Message message) {
         String payloadStr = "";
@@ -50,9 +51,11 @@ public class DummyCodec implements MessageCodec {
 
         MessageType type = MessageType.fromId(typeId);
         if (type == MessageType.TRACKER_REGISTER_REQ) {
-            return new RegisterPeerRequest(parts[0], new PeerAddress(parts[1], Integer.parseInt(parts[2])));
+            return new RegisterPeerRequest(parts[0],
+                new PeerAddress(parts[1], Integer.parseInt(parts[2])));
         } else if (type == MessageType.TRACKER_REGISTER_RES) {
-            return new PeerLeaseResponse(new PeerAddress(parts[0], Integer.parseInt(parts[1])), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+            return new PeerLeaseResponse(new PeerAddress(parts[0], Integer.parseInt(parts[1])),
+                Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
         }
 
         throw new UnsupportedOperationException("DummyCodec не поддерживает тип: " + type);
