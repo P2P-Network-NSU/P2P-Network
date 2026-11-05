@@ -48,8 +48,7 @@ public class TrackerService {
     }
 
     public void updateHeartbeat(String peerId, List<String> fileIds)
-        throws ClientOperationException
-    {
+        throws ClientOperationException {
         boolean status = peerStorage.updateHeartBeat(peerId, fileIds, Instant.now());
         if (!status) {
             OperationError error = new OperationError(
