@@ -8,8 +8,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HashUtilsTest {
 
@@ -103,4 +107,51 @@ class HashUtilsTest {
                 () -> HashUtils.computeSha256((java.io.InputStream) null)
         );
     }
+
+
+    @Test
+    void incrementalHasherMatchesSingleShot() {
+        HashUtils.Sha256Hasher hasher = HashUtils.newSha256Hasher();
+
+        hasher.update("a".getBytes(StandardCharsets.UTF_8));
+        hasher.update("b".getBytes(StandardCharsets.UTF_8));
+        hasher.update("c".getBytes(StandardCharsets.UTF_8));
+
+        assertEquals(ABC_HASH, hasher.finish());
+    }
+
+    @Test
+    void incrementalHasherSupportsEmptyInput() {
+        HashUtils.Sha256Hasher hasher = HashUtils.newSha256Hasher();
+
+        assertEquals(EMPTY_HASH, hasher.finish());
+    }
+
+    @Test
+    void incrementalHasherSupportsArraySlices() {
+        HashUtils.Sha256Hasher hasher = HashUtils.newSha256Hasher();
+
+        hasher.update("xabcx".getBytes(StandardCharsets.UTF_8), 1, 3);
+
+        assertEquals(ABC_HASH, hasher.finish());
+    }
+
+    @Test
+    void incrementalHasherCannotBeReusedAfterFinish() {
+        HashUtils.Sha256Hasher hasher = HashUtils.newSha256Hasher();
+
+        hasher.update("abc".getBytes(StandardCharsets.UTF_8));
+        hasher.finish();
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> hasher.update(new byte[]{1})
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                hasher::finish
+        );
+    }
+
 }

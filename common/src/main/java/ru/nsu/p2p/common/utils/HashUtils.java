@@ -36,8 +36,9 @@ public final class HashUtils {
      * @return SHA-256 в виде 64 шестнадцатеричных символов
      */
     public static String computeSha256(byte[] data) {
-        Objects.requireNonNull(data);
-        return HexFormat.of().formatHex(newDigest().digest(data));
+        Sha256Hasher hasher = newSha256Hasher();
+        hasher.update(data);
+        return hasher.finish();
     }
 
     /**
@@ -62,15 +63,16 @@ public final class HashUtils {
      */
     public static String computeSha256(InputStream input) throws IOException {
         Objects.requireNonNull(input);
-        MessageDigest digest = newDigest();
+
+        Sha256Hasher hasher = newSha256Hasher();
         byte[] buffer = new byte[8192];
         int count;
 
         while ((count = input.read(buffer)) != -1) {
-            digest.update(buffer, 0, count);
+            hasher.update(buffer, 0, count);
         }
 
-        return HexFormat.of().formatHex(digest.digest());
+        return hasher.finish();
     }
 
     /**
@@ -92,5 +94,53 @@ public final class HashUtils {
         }
 
         return true;
+    }
+
+    /**
+     * Создаёт накопитель для потокового вычисления SHA-256.
+     */
+    public static Sha256Hasher newSha256Hasher() {
+        return new Sha256Hasher();
+    }
+
+    /**
+     * Накопитель для последовательного вычисления SHA-256.
+     */
+    public static final class Sha256Hasher {
+
+        private final MessageDigest digest = newDigest();
+        private boolean finished;
+
+        private Sha256Hasher() {
+        }
+
+        /**
+         * Добавляет массив байтов в вычисляемый хеш.
+         */
+        public void update(byte[] data) {
+            Objects.requireNonNull(data);
+            update(data, 0, data.length);
+        }
+
+        /**
+         * Добавляет часть массива байтов в вычисляемый хеш.
+         */
+        public void update(byte[] data, int offset, int length) {
+            if (finished) {
+                throw new IllegalStateException("Hashing already finished");
+            }
+            digest.update(data, offset, length);
+        }
+
+        /**
+         * Завершает вычисление и возвращает SHA-256.
+         */
+        public String finish() {
+            if (finished) {
+                throw new IllegalStateException("Hashing already finished");
+            }
+            finished = true;
+            return HexFormat.of().formatHex(digest.digest());
+        }
     }
 }
