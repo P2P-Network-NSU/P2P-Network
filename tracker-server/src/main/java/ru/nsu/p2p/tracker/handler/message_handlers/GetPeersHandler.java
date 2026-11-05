@@ -1,9 +1,10 @@
-package ru.nsu.p2p.tracker.handler;
+package ru.nsu.p2p.tracker.handler.message_handlers;
 
 import ru.nsu.p2p.common.model.PeerList;
 import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.tracker.GetPeersRequest;
 import ru.nsu.p2p.common.protocol.tracker.GetPeersResponse;
+import ru.nsu.p2p.tracker.handler.MessageHandler;
 import ru.nsu.p2p.tracker.service.TrackerService;
 
 public class GetPeersHandler implements MessageHandler<GetPeersRequest> {

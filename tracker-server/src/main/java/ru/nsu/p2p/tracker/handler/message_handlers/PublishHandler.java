@@ -1,7 +1,8 @@
-package ru.nsu.p2p.tracker.handler;
+package ru.nsu.p2p.tracker.handler.message_handlers;
 
 import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.tracker.PublishFileRequest;
+import ru.nsu.p2p.tracker.handler.MessageHandler;
 import ru.nsu.p2p.tracker.service.TrackerService;
 
 public class PublishHandler implements MessageHandler<PublishFileRequest> {

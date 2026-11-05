@@ -29,6 +29,15 @@ public class TrackerService {
     }
 
     public PeerLeaseResponse registerPeer(String peerId, PeerAddress address) {
+        if (peerId == null || peerId.isBlank() || address == null) {
+            var error = new OperationError(
+                ErrorCode.INVALID_ARGUMENT,
+                "Передан пустой ид пира"
+                    + "или передан пустой адрес",
+                false
+            );
+            throw new ClientOperationException(error);
+        }
         PeerInfo info = new PeerInfo(peerId, address, Instant.now());
         peerStorage.register(info);
         return new PeerLeaseResponse(
@@ -39,8 +48,7 @@ public class TrackerService {
     }
 
     public void updateHeartbeat(String peerId, List<String> fileIds)
-        throws ClientOperationException
-    {
+        throws ClientOperationException {
         boolean status = peerStorage.updateHeartBeat(peerId, fileIds, Instant.now());
         if (!status) {
             OperationError error = new OperationError(
@@ -70,6 +78,14 @@ public class TrackerService {
     }
 
     public PeerList getPeers(String fileId) {
+        if (fileId == null || fileId.isBlank()) {
+            var error = new OperationError(
+                ErrorCode.INVALID_ARGUMENT,
+                "Передан пустой ид файла",
+                false
+            );
+            throw new ClientOperationException(error);
+        }
         // Надо наверное как-то сортировать и возвращать небольшой список пиров, чтобы не возвращать
         // огромные списки, если пиров будет огромное количество.
         List<PeerInfo> peers = peerStorage.findAvailablePeers(fileId);
@@ -102,6 +118,14 @@ public class TrackerService {
     }
 
     public FileManifest getManifest(String fileId) {
+        if (fileId == null || fileId.isBlank()) {
+            var error = new OperationError(
+                ErrorCode.INVALID_ARGUMENT,
+                "Передан пустой ид файла",
+                false
+            );
+            throw new ClientOperationException(error);
+        }
         return fileStorage.getManifest(fileId)
             .orElseThrow(
                 () -> new ClientOperationException(
