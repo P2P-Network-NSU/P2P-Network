@@ -1,0 +1,161 @@
+.root {
+    -fx-font-family: "Nunito";
+    -fx-font-size: 20px;
+}
+
+/* Окно с разделом "Мои файлы" */
+.my-files-view {
+    -fx-background-color: white;
+    -fx-padding: 24;
+    -fx-spacing: 16;
+    -fx-alignment: top-left;
+}
+
+/* Полоска с кнопками "Мои файлы" */
+.file-actions {
+    -fx-spacing: 10;
+    -fx-alignment: center-left;
+}
+
+/* Кнопки в этой полоске "Мои файлы" */
+.file-actions .button {
+    -fx-border-width: 2px;
+    -fx-border-color: #EBECF0;
+    -fx-border-radius: 6px;
+}
+
+    /* Заголовок */
+    .screen-title {
+        -fx-font-size: 30px;
+        -fx-font-weight: bold;
+    }
+
+/* Путь к папке раздачи */
+.folder-path {
+    -fx-text-fill: #6b7280;
+}
+
+
+/* Левое меню */
+.left-menu {
+    -fx-background-color: #F7F8FA;
+    -fx-padding: 10;
+    -fx-spacing: 10;
+    -fx-border-width: 1px;
+    -fx-border-color: #EBECF0;
+    -fx-min-width: 200px;
+}
+
+/* Кнопка */
+.button {
+    -fx-min-width: 130px;
+    -fx-background-color: white;
+    -fx-cursor: hand;
+    -fx-background-radius: 6px;
+}
+
+/* Наведение на кнопку */
+.button:hover {
+    -fx-background-color: #D7E0FF;
+}
+
+/* Кнопки левого меню */
+.left-menu .button {
+    -fx-background-color: #F7F8FA;
+    -fx-max-width: infinity;
+    -fx-alignment: center-left;
+    -fx-padding: 10 20 10 20;
+}
+
+/* Наведение на кнопки левого меню */
+.left-menu .button:hover {
+    -fx-background-color: #D7E0FF;
+}
+
+/* Открытый раздел */
+.left-menu .button.active {
+    -fx-background-color: #D5DEFD;
+}
+
+/*
+.files-table - таблица
+.column-header .label - подписи колонок
+.table-row-cell - строка одного файла
+.table-cell - отдельная ячейка
+:filled:hover - наведение на строку с файлом
+:filled:selected - выбранная строка
+*/
+
+/* Таблица: фон, рамка, размер текста и высота строк */
+.files-table {
+    -fx-background-color: white;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: #DCDEE5;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 0;
+
+    -fx-font-size: 16px;
+    -fx-fixed-cell-size: 44;
+}
+
+/* Общий фон шапки */
+.files-table .column-header-background {
+    -fx-background-color: #F5F6FA;
+    -fx-background-radius: 6 6 0 0;
+}
+
+/* Заголовки колонок и свободная область шапки */
+.files-table .column-header,
+.files-table .filler {
+    -fx-background-color: transparent;
+    -fx-pref-height: 38;
+    -fx-border-color: transparent #E7E9EF #E7E9EF transparent;
+    -fx-border-width: 0 1 1 0;
+}
+
+/* Текст заголовков */
+.files-table .column-header .label {
+    -fx-alignment: center-left;
+    -fx-padding: 0 20;
+    -fx-text-fill: #374151;
+    -fx-font-weight: normal;
+}
+
+/* Убираем стандартное чередование цветов строк */
+.files-table .table-row-cell {
+    -fx-background-color: white;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+/* Ячейки: отступы и разделители */
+.files-table .table-cell {
+    -fx-background-color: transparent;
+    -fx-alignment: center-left;
+    -fx-padding: 0 20;
+    -fx-text-fill: #111827;
+    -fx-border-color: transparent #E7E9EF #E7E9EF transparent;
+    -fx-border-width: 0 1 1 0;
+}
+
+/* Подсветка при наведении */
+.files-table .table-row-cell:filled:hover {
+    -fx-background-color: #F0F3FF;
+}
+
+/* Выбранная строка. Правило идет после наведения */
+.files-table .table-row-cell:filled:selected {
+    -fx-background-color: #E3E9FF;
+}
+
+/* На голубом фоне оставляем темный текст */
+.files-table .table-row-cell:filled:selected .table-cell {
+    -fx-text-fill: #111827;
+}
+
+/* Под списком файлов оставляем чистое белое пространство */
+.files-table .table-row-cell:empty .table-cell {
+    -fx-border-width: 0;
+}

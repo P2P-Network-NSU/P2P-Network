@@ -4,7 +4,10 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -17,6 +20,7 @@ import static ru.nsu.p2p.ui.DownloadsView.createDownloadsView;
 import static ru.nsu.p2p.ui.MyFilesView.createMyFilesView;
 import static ru.nsu.p2p.ui.SharedFilesService.createSharedDirectory;
 import static ru.nsu.p2p.ui.Utils.createIcon;
+import static ru.nsu.p2p.ui.Utils.setActiveButton;
 
 // Stage - Окно
 // Scene - Содержимое окна
@@ -43,6 +47,29 @@ public final class P2pApplication extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+        System.setProperty("prism.lcdtext", "false");
+        // Шрифт
+        Font loadedFont = Font.loadFont(
+                getClass().getResourceAsStream("/fonts/Nunito-Regular.ttf"),
+                14
+        );
+
+        if (loadedFont == null) {
+            System.err.println("Не удалось загрузить шрифт!");
+        } else {
+            System.out.println("Шрифт загружен: " + loadedFont.getFamily());
+        }
+
+        loadedFont = Font.loadFont(
+                getClass().getResourceAsStream("/fonts/Nunito-Bold.ttf"),
+                14
+        );
+
+        if (loadedFont == null) {
+            System.err.println("Не удалось загрузить шрифт!");
+        } else {
+            System.out.println("Шрифт загружен: " + loadedFont.getFamily());
+        }
 
         Path sharedDirectory;
 
@@ -94,6 +121,7 @@ public final class P2pApplication extends Application {
                                                         myFilesView,
                                                         catalogNetworkView,
                                                         downloadsView);
+        leftMenuWithButtons.getStyleClass().add("left-menu");
 
         // BorderPane для расположения элементов
         root.setCenter(myFilesView);
@@ -101,6 +129,14 @@ public final class P2pApplication extends Application {
 
         // Текущая сцена
         Scene scene = new Scene(root, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+
+        var stylesheet = P2pApplication.class.getResource("/styles/app.css");
+
+        if (stylesheet == null) {
+            throw new IllegalStateException("Не найден /styles/app.css");
+        }
+
+        scene.getStylesheets().add(stylesheet.toExternalForm());
 
         stage.setTitle("P2P Network");
         stage.setScene(scene);
@@ -129,20 +165,37 @@ public final class P2pApplication extends Application {
         streamButton.setGraphic(createIcon("/icons/stream.svg"));
         settingsButton.setGraphic(createIcon("/icons/settings.svg"));
 
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+
+        Button[] menuButtons = {catalogNetworkButton, downloadsButton, myFilesButton, streamButton, settingsButton};
+        setActiveButton(myFilesButton, menuButtons);
+
         // Функционал этих кнопок
         myFilesButton.setOnAction(event -> {
+            setActiveButton(myFilesButton, menuButtons);
             root.setCenter(myFilesView);
         });
 
         catalogNetworkButton.setOnAction(event -> {
+            setActiveButton(catalogNetworkButton, menuButtons);
             root.setCenter(catalogNetworkView);
         });
 
         downloadsButton.setOnAction(event -> {
+            setActiveButton(downloadsButton, menuButtons);
             root.setCenter(downloadsView);
         });
 
-        return new VBox(SIDEBAR_SPACING, catalogNetworkButton, downloadsButton, myFilesButton, streamButton, settingsButton);
+        return new VBox(
+                SIDEBAR_SPACING,
+                catalogNetworkButton,
+                downloadsButton,
+                myFilesButton,
+                streamButton,
+                spacer,
+                settingsButton
+        );
     }
 
 }

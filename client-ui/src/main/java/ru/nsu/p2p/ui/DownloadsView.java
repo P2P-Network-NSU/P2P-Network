@@ -5,6 +5,10 @@ import javafx.scene.layout.VBox;
 
 public class DownloadsView {
     public static VBox createDownloadsView() {
-        return new VBox(new Label("Загрузки"));
+        Label title = new Label("Загрузки");
+        title.getStyleClass().add("screen-title");
+        VBox view = new VBox(title);
+        view.getStyleClass().add("screen-view");
+        return view;
     }
 }

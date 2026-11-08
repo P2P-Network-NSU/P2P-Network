@@ -5,6 +5,10 @@ import javafx.scene.layout.VBox;
 
 public class CatalogView {
     public static VBox createCatalogNetworkView() {
-        return new VBox(new Label("Каталог сети"));
+        Label title = new Label("Каталог сети");
+        title.getStyleClass().add("screen-title");
+        VBox view = new VBox(title);
+        view.getStyleClass().add("screen-view");
+        return view;
     }
 }

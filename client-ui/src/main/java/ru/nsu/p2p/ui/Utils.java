@@ -7,6 +7,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.FillRule;
 import javafx.scene.shape.Rectangle;
@@ -79,5 +80,12 @@ public final class Utils {
         shape.setFill(Color.BLACK);
         shape.setFillRule(FillRule.EVEN_ODD);
         return shape;
+    }
+
+    public static void setActiveButton(Button activeButton, Button... allButtons) {
+        for (Button b : allButtons) {
+            b.getStyleClass().remove("active");
+        }
+        activeButton.getStyleClass().add("active");
     }
 }
