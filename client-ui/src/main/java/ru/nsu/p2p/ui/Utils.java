@@ -32,28 +32,29 @@ public final class Utils {
                 throw new IllegalArgumentException("Не найдена иконка: " + resourcePath);
             }
 
+            // Фабрика XML + безопасность
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 
-            Element svg = factory.newDocumentBuilder().parse(stream).getDocumentElement();
-            var paths = svg.getElementsByTagName("path");
-            if (!"0 0 512 512".equals(svg.getAttribute("viewBox"))
-                    || paths.getLength() != 1) {
-                throw new IllegalArgumentException("Неподдерживаемый SVG: " + resourcePath);
-            }
 
-            Element path = (Element) paths.item(0);
-            SVGPath shape = new SVGPath();
-            shape.setContent(path.getAttribute("d"));
-            shape.setFill(Color.BLACK);
-            shape.setFillRule(FillRule.EVEN_ODD);
+            Element svg = factory
+                    // Создание парсера
+                    .newDocumentBuilder()
+                    // Чтение файла и создание его представления
+                    .parse(stream)
+                    // Возврат корневого элемента
+                    .getDocumentElement();
+
+            SVGPath shape = getShape(resourcePath, svg);
+            // Подключение CSS
             shape.getStyleClass().add("svg-icon");
+            // Сжатие
             shape.getTransforms().add(new Scale(ICON_SIZE / SVG_SIZE, ICON_SIZE / SVG_SIZE));
 
-            // Прозрачная рамка сохраняет исходные поля и размер графики 20 x 20.
+            // Прозрачная рамка сохраняет исходные поля и размер графики 20 x 20
             Rectangle viewport = new Rectangle(ICON_SIZE, ICON_SIZE, Color.TRANSPARENT);
             Group icon = new Group(viewport, shape);
             icon.setMouseTransparent(true);
@@ -61,5 +62,22 @@ public final class Utils {
         } catch (ParserConfigurationException | SAXException | IOException error) {
             throw new IllegalStateException("Не удалось загрузить SVG: " + resourcePath, error);
         }
+    }
+
+    private static SVGPath getShape(String resourcePath, Element svg) {
+        var paths = svg.getElementsByTagName("path");
+        // 0, 0 - начало координат
+        // 512, 512 - ширина и высота иконки
+        if (!"0 0 512 512".equals(svg.getAttribute("viewBox"))
+                || paths.getLength() != 1) {
+            throw new IllegalArgumentException("Неподдерживаемый SVG: " + resourcePath);
+        }
+
+        Element path = (Element) paths.item(0);
+        SVGPath shape = new SVGPath();
+        shape.setContent(path.getAttribute("d"));
+        shape.setFill(Color.BLACK);
+        shape.setFillRule(FillRule.EVEN_ODD);
+        return shape;
     }
 }
