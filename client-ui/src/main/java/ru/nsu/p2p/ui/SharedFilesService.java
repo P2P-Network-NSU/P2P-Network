@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class SharedFilesService {
+
+    // Создание/открытие папки раздачи
     public static Path createSharedDirectory() throws IOException {
         String userHome = System.getProperty("user.home");
         Path sharedDirectory = Path.of(userHome, ".p2p-client-NSU", "shared");
@@ -15,6 +17,7 @@ public class SharedFilesService {
         return sharedDirectory;
     }
 
+    // Чтение файлов из папки раздачи
     public static File[] readSharedFiles(Path sharedDirectory) throws IOException {
         File directory = sharedDirectory.toFile();
 
