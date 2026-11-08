@@ -24,7 +24,11 @@ import static ru.nsu.p2p.ui.SharedFilesService.readSharedFiles;
 import static ru.nsu.p2p.ui.Utils.createIcon;
 
 public class MyFilesView {
+    private static final double VIEW_CONTENT_SPACING = 16.0;
+    private static final double ACTION_BAR_SPACING = 10.0;
+
     public static VBox createMyFilesView(Stage stage, Path sharedDirectory) {
+        // Объекты окна
         Label myFilesLabel = new Label("Мои файлы");
         Label myFolderLabel = new Label("Папка: " + sharedDirectory);
         Button openFolderButton = new Button("Открыть папку");
@@ -32,10 +36,12 @@ public class MyFilesView {
         Button deleteButton = new Button("Удалить файл");
         Button refreshButton = new Button("Обновить");
 
+        // Таблица
         TableView<File> files = new TableView<>();
         TableColumn<File, String> nameColumn = new TableColumn<>("Имя");
         TableColumn<File, Number> sizeColumn = new TableColumn<>("Размер, Мбайт");
 
+        // Фабрики значений
         nameColumn.setCellValueFactory(cellData -> {
             File file = cellData.getValue();
             String name = file.getName();
@@ -45,9 +51,11 @@ public class MyFilesView {
 
         sizeColumn.setCellValueFactory(cellData -> {
             File file = cellData.getValue();
+
             return new ReadOnlyLongWrapper(file.length());
         });
 
+        // Фабрика ячейки
         sizeColumn.setCellFactory(column -> new TableCell<File, Number>() {
             @Override
             protected void updateItem(Number bytes, boolean empty) {
@@ -66,6 +74,7 @@ public class MyFilesView {
         files.getColumns().add(nameColumn);
         files.getColumns().add(sizeColumn);
 
+        // Заполняем таблицу файлами из папки раздачи
         try {
             File[] sharedFiles = readSharedFiles(sharedDirectory);
             files.getItems().setAll(sharedFiles);
@@ -79,8 +88,10 @@ public class MyFilesView {
             alert.showAndWait();
         }
 
+        // Inactive свойство для кнопки удаления
         deleteButton.disableProperty().bind(files.getSelectionModel().selectedItemProperty().isNull());
 
+        // Удаление файла
         deleteButton.setOnAction(event -> {
             // getSelectionModel() - объект, который управляет выделением строк
             // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
@@ -114,6 +125,8 @@ public class MyFilesView {
                 }).start();
             }
         });
+
+        // Добавление файла
         addFileButton.setOnAction(event -> {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Выбери файл");
@@ -154,6 +167,8 @@ public class MyFilesView {
                 }).start();
             }
         });
+
+        // Открытие папки раздачи
         openFolderButton.setOnAction(event -> {
             new Thread(() -> {
                 try {
@@ -174,6 +189,8 @@ public class MyFilesView {
                 }
             }).start();
         });
+
+        // Обновление таблицы файлов
         refreshButton.setOnAction(event -> {
             try {
                 File[] updatedFiles = readSharedFiles(sharedDirectory);
@@ -191,14 +208,16 @@ public class MyFilesView {
             }
         });
 
+        // Добавление к кнопкам SVG иконок
         openFolderButton.setGraphic(createIcon("/icons/folder.svg"));
         addFileButton.setGraphic(createIcon("/icons/add.svg"));
         deleteButton.setGraphic(createIcon("/icons/delete.svg"));
         refreshButton.setGraphic(createIcon("/icons/refresh.svg"));
 
+        // Расположение всех элементов
         HBox statusBar = new HBox();
-        HBox fileActions = new HBox(10, openFolderButton, addFileButton, deleteButton, refreshButton);
-        VBox myFilesView = new VBox(16, myFilesLabel, myFolderLabel, fileActions, files, statusBar);
+        HBox fileActions = new HBox(ACTION_BAR_SPACING, openFolderButton, addFileButton, deleteButton, refreshButton);
+        VBox myFilesView = new VBox(VIEW_CONTENT_SPACING, myFilesLabel, myFolderLabel, fileActions, files, statusBar);
         // Если в вертикальном контейнере появится дополнительное место, отдаем его списку files
         VBox.setVgrow(files, Priority.ALWAYS);
         myFilesView.setAlignment(Pos.TOP_LEFT);
