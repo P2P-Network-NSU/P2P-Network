@@ -2,13 +2,11 @@ package ru.nsu.p2p.ui;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import javafx.scene.control.Alert;
@@ -31,6 +29,14 @@ import static ru.nsu.p2p.ui.Utils.createIcon;
 
 public final class P2pApplication extends Application {
 
+    private static final double MIN_WINDOW_WIDTH = 600;
+    private static final double MIN_WINDOW_HEIGHT = 400;
+
+    private static final double DEFAULT_WINDOW_WIDTH = 1280;
+    private static final double DEFAULT_WINDOW_HEIGHT = 720;
+
+    private static final double SIDEBAR_SPACING = 10;
+
     public static void launchUi(String[] args) {
         Application.launch(P2pApplication.class, args);
     }
@@ -40,9 +46,11 @@ public final class P2pApplication extends Application {
 
         Path sharedDirectory;
 
+        // Открываем/создаем папку раздачи
         try {
             sharedDirectory = createSharedDirectory();
         } catch (FileAlreadyExistsException e) {
+            // Ошибка создания/открытия - есть файл shared
             Alert alert = new Alert(Alert.AlertType.ERROR);
 
             alert.initOwner(stage);
@@ -57,6 +65,7 @@ public final class P2pApplication extends Application {
             alert.showAndWait();
             return;
         } catch (IOException e) {
+            // Общая ошибка создания/открытия
             Alert alert = new Alert(Alert.AlertType.ERROR);
 
             alert.initOwner(stage);
@@ -68,6 +77,7 @@ public final class P2pApplication extends Application {
             return;
         }
 
+        // Главное окно
         BorderPane root = new BorderPane();
 
         // Окно с файлами пользователя
@@ -85,15 +95,17 @@ public final class P2pApplication extends Application {
                                                         catalogNetworkView,
                                                         downloadsView);
 
+        // BorderPane для расположения элементов
         root.setCenter(myFilesView);
         root.setLeft(leftMenuWithButtons);
 
-        Scene scene = new Scene(root, 1280, 720);
+        // Текущая сцена
+        Scene scene = new Scene(root, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
 
         stage.setTitle("P2P Network");
         stage.setScene(scene);
-        stage.setMinWidth(600);
-        stage.setMinHeight(400);
+        stage.setMinWidth(MIN_WINDOW_WIDTH);
+        stage.setMinHeight(MIN_WINDOW_HEIGHT);
 
         // Показ окна
         stage.show();
@@ -103,18 +115,21 @@ public final class P2pApplication extends Application {
                                                 VBox myFilesView,
                                                 VBox catalogNetworkView,
                                                 VBox downloadsView) {
+        // Создание кнопок меню
         Button catalogNetworkButton = new Button("Каталог сети");
         Button downloadsButton = new Button("Загрузки");
         Button myFilesButton = new Button("Мои файлы");
         Button streamButton = new Button("Стриминг");
         Button settingsButton = new Button("Настройки");
 
+        // Добавление к ним SVG иконок
         catalogNetworkButton.setGraphic(createIcon("/icons/network.svg"));
         downloadsButton.setGraphic(createIcon("/icons/download.svg"));
         myFilesButton.setGraphic(createIcon("/icons/folder.svg"));
         streamButton.setGraphic(createIcon("/icons/stream.svg"));
         settingsButton.setGraphic(createIcon("/icons/settings.svg"));
 
+        // Функционал этих кнопок
         myFilesButton.setOnAction(event -> {
             root.setCenter(myFilesView);
         });
@@ -127,7 +142,7 @@ public final class P2pApplication extends Application {
             root.setCenter(downloadsView);
         });
 
-        return new VBox(10, catalogNetworkButton, downloadsButton, myFilesButton, streamButton, settingsButton);
+        return new VBox(SIDEBAR_SPACING, catalogNetworkButton, downloadsButton, myFilesButton, streamButton, settingsButton);
     }
 
 }
