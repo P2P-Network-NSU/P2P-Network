@@ -1,8 +1,8 @@
 module protocol
 
 pub struct REGISTER_REQ {
-	pub     peer_id string
-	pub     host    string
-	pub     port    int
+pub:
+	peer_id string
+	host    string
+	port    int
 }
-

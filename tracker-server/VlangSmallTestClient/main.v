@@ -31,5 +31,10 @@ fn main() {
 	}
 	data := buf[..n].clone()
 
-	println(data.hex())
+	resp := protocol.decode_server_answer(data) or {
+		println(err)
+		exit(1)
+	}
+
+	println(resp)
 }
