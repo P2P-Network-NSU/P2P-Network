@@ -12,21 +12,12 @@ import ru.nsu.p2p.common.model.PeerList;
 
 public interface TrackerGateway {
 
-    CompletionStage<Duration> register(
-            String peerId,
-            PeerAddress address
-    );
+    CompletionStage<Duration> register(String peerId, PeerAddress address);
 
-    CompletionStage<Void> heartbeat(
-            String peerId,
-            Collection<String> fileIds
-    );
+    CompletionStage<Void> heartbeat(String peerId, Collection<String> fileIds);
 
     CompletionStage<Void> publish(
-            String peerId,
-            FileManifest manifest,
-            String title,
-            String description
+            String peerId, FileManifest manifest, String title, String description
     );
 
     CompletionStage<CatalogPage> search(CatalogQuery query);
