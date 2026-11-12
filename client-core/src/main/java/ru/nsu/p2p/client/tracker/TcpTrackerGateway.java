@@ -10,7 +10,7 @@ import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.common.model.PeerList;
 
-public class TrackerClient implements TrackerGateway {
+public class TcpTrackerGateway implements TrackerGateway {
 
     @Override
     public CompletionStage<Duration> register(String peerId, PeerAddress address) {
