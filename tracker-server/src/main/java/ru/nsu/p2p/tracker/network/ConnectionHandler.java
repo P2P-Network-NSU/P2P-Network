@@ -16,6 +16,7 @@ import ru.nsu.p2p.tracker.handler.HandlerRegistry;
 import ru.nsu.p2p.tracker.handler.MessageHandler;
 
 public class ConnectionHandler implements Runnable {
+
     private final Socket socket;
     private final MessageCodec codec;
     private final HandlerRegistry registry;

@@ -6,8 +6,9 @@ import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.core.MessageType;
 
 public class HandlerRegistry {
+
     private final Map<MessageType, MessageHandler<? extends Message>> handlers =
-            new EnumMap<>(MessageType.class);
+        new EnumMap<>(MessageType.class);
 
     public <T extends Message> void register(MessageType type, MessageHandler<T> handler) {
         handlers.put(type, handler);
