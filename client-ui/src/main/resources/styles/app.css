@@ -24,11 +24,11 @@
     -fx-border-radius: 6px;
 }
 
-    /* Заголовок */
-    .screen-title {
-        -fx-font-size: 30px;
-        -fx-font-weight: bold;
-    }
+/* Заголовок */
+.screen-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
 
 /* Путь к папке раздачи */
 .folder-path {
@@ -41,7 +41,7 @@
     -fx-background-color: #F7F8FA;
     -fx-padding: 10;
     -fx-spacing: 10;
-    -fx-border-width: 1px;
+    -fx-border-width: 1px 1px 0px 1px;
     -fx-border-color: #EBECF0;
     -fx-min-width: 200px;
 }
@@ -158,4 +158,30 @@
 /* Под списком файлов оставляем чистое белое пространство */
 .files-table .table-row-cell:empty .table-cell {
     -fx-border-width: 0;
+}
+
+/* Полоска со статусом подключения и скоростью */
+.tracker-status {
+    -fx-font-size: 15px;
+    -fx-spacing: 10;
+    -fx-alignment: center-left;
+    -fx-padding: 2 20 2 20;
+    -fx-border-width: 1px;
+    -fx-border-color: #EBECF0;
+}
+
+.status-label {
+    -fx-font-size: 25px;
+    -fx-font-weight: bold;
+}
+
+.status-bar {
+    -fx-padding: 0;
+    -fx-spacing: 3;
+    -fx-alignment: center-left;
+    /* -fx-background-color: #FFF3CD; */
+}
+
+.status-bar.card {
+    -fx-padding: -10 0;
 }

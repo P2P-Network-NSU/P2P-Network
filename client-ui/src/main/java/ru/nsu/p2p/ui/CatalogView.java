@@ -8,7 +8,7 @@ public class CatalogView {
         Label title = new Label("Каталог сети");
         title.getStyleClass().add("screen-title");
         VBox view = new VBox(title);
-        view.getStyleClass().add("screen-view");
+        view.getStyleClass().add("catalog-view");
         return view;
     }
 }

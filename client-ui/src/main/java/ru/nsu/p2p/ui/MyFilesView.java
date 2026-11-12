@@ -11,9 +11,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import ru.nsu.p2p.common.transfer.ShareSnapshot;
 import ru.nsu.p2p.common.transfer.ShareState;
 
 import java.awt.*;
@@ -37,14 +39,41 @@ public class MyFilesView {
         Button deleteButton = new Button("Удалить файл");
         Button refreshButton = new Button("Обновить");
 
-        Label statusLabel = new Label("");
-
         // Таблица
         TableView<SharedFileItem> files = new TableView<>();
         files.getStyleClass().add("files-table");
         files.setColumnResizePolicy(
                 TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS
         );
+
+        // Статус-бар
+        Label sizeFileLabel = new Label();
+        Label statusFileLabel = new Label();
+        Label countUploadsFileLabel = new Label();
+
+        sizeFileLabel.managedProperty().bind(
+                sizeFileLabel.textProperty().isNotEmpty()
+        );
+
+        statusFileLabel.managedProperty().bind(
+                statusFileLabel.textProperty().isNotEmpty()
+        );
+
+        countUploadsFileLabel.managedProperty().bind(
+                countUploadsFileLabel.textProperty().isNotEmpty()
+        );
+
+        Label statusLabel = new Label("Выберите файл в таблице");
+        statusLabel.getStyleClass().add("status-label");
+
+        // Button openFileButton = new Button("Открыть файл");
+        // FLAG_CHECK_LATER
+        // В БУДУЩЕМ ПОЛУЧАТЬ СТАТУС РАЗДАЧИ ДЛЯ ПЕРВОНАЧАЛЬНОГО ЗНАЧЕНИЯ ОТ ЯДРА ---
+        Button replaceStatusFileUploadButton = new Button("Начать раздачу");
+        replaceStatusFileUploadButton.setGraphic(
+                createIcon("/icons/start-sharing.svg")
+        );
+        // FLAG_CHECK_LATER ---------------------------------------------------------
 
         TableColumn<SharedFileItem, String> nameColumn = new TableColumn<>("Имя");
         TableColumn<SharedFileItem, Number> sizeColumn = new TableColumn<>("Размер, МиБ");
@@ -182,6 +211,10 @@ public class MyFilesView {
             File file = chooser.showOpenDialog(stage);
 
             if (file != null) {
+                addFileButton.setDisable(true);
+                addFileButton.setText("Копирование…");
+
+                refreshButton.setDisable(true);
                 new Thread(() -> {
                     Path source = file.toPath();
                     Path destination = sharedDirectory.resolve(file.getName());
@@ -214,7 +247,14 @@ public class MyFilesView {
                             alert.setContentText("Не удалось скопировать файл " + file.getName() + ".\nПричина: " + e.getMessage());
                             alert.showAndWait();
                         });
-                    }
+                    } finally {
+                        Platform.runLater(() -> {
+                            addFileButton.setText("Добавить файл...");
+                            addFileButton.setDisable(false);
+
+                            refreshButton.setDisable(false);
+                    });
+                }
                 }).start();
             }
         });
@@ -270,11 +310,77 @@ public class MyFilesView {
         refreshButton.setGraphic(createIcon("/icons/refresh.svg"));
 
         // Расположение всех элементов
-        HBox statusBar = new HBox(
-                statusLabel
+        HBox selectedFileActions = new HBox(/*openFileButton, FLAG_CHECK_LATER*/replaceStatusFileUploadButton);
+
+        selectedFileActions.visibleProperty().bind(
+                files.getSelectionModel().selectedItemProperty().isNotNull()
         );
-        statusBar.setAlignment(Pos.CENTER_LEFT);
-        statusBar.setPadding(new Insets(10));
+
+        selectedFileActions.managedProperty().bind(
+                selectedFileActions.visibleProperty()
+        );
+
+        VBox statusBar = new VBox(
+                statusLabel,
+                sizeFileLabel,
+                statusFileLabel,
+                countUploadsFileLabel,
+                selectedFileActions
+        );
+        statusBar.setMinHeight(Region.USE_PREF_SIZE);
+        files.setMinHeight(0);
+        //statusBar.setAlignment(Pos.CENTER_LEFT);
+        //statusBar.setPadding(new Insets(10));
+
+        files.getSelectionModel().selectedItemProperty()
+                .addListener((observable, oldItem, selectedItem) -> {
+                    if (selectedItem == null) {
+                        statusLabel.setText("Выберите файл в таблице");
+                        statusFileLabel.setText("");
+                        sizeFileLabel.setText("");
+                        countUploadsFileLabel.setText("");
+                        statusBar.getStyleClass().remove("card");
+                        return;
+                    }
+
+                    double sizeInMiB = selectedItem.getSize() / (1024.0 * 1024.0);
+
+                    statusLabel.setText("Выбранный файл: " + selectedItem.getName());
+                    sizeFileLabel.setText("Размер: " + String.format("%.3f", sizeInMiB) + " МиБ");
+                    statusFileLabel.setText("Состояние: " + selectedItem.state().toString());
+                    // В ДАЛЬНЕЙШЕМ ПОДКЛЮЧИТЬ ЯДРО ---
+                    countUploadsFileLabel.setText("Количество активных раздач: ---");
+                    //countUploadsFileLabel.setText(ShareSnapshot.activeUploadCount());
+                    // FLAG_CHECK_LATER ---------------
+
+                    //openFileButton.setOnAction(event -> {
+                    //
+                    //});
+                    // FLAG_CHECK_LATER
+
+                    // ЖДУ РЕАЛИЗАЦИЮ ОТ ЯДРА ----------------
+                    // КНОПКА ПОКА ОБЩАЯ ДЛЯ ВСЕХ ФАЙЛОВ -----
+                    // ДОБАВИТЬ ИКОНКУ -----------------------
+                    replaceStatusFileUploadButton.setOnAction(event -> {
+                        if (replaceStatusFileUploadButton.getText().equals("Начать раздачу")) {
+                            replaceStatusFileUploadButton.setText("Остановить раздачу");
+                            replaceStatusFileUploadButton.setGraphic(
+                                    createIcon("/icons/stop-sharing.svg")
+                            );
+                        }
+                        else {
+                            replaceStatusFileUploadButton.setText("Начать раздачу");
+                            replaceStatusFileUploadButton.setGraphic(
+                                    createIcon("/icons/start-sharing.svg")
+                            );
+                        }
+                    });
+                    // FLAG_CHECK_LATER ----------------------
+
+                    if (!statusBar.getStyleClass().contains("card")) {
+                        statusBar.getStyleClass().add("card");
+                    }
+                });
 
         HBox fileActions = new HBox(
                 openFolderButton,
@@ -295,6 +401,8 @@ public class MyFilesView {
         fileActions.getStyleClass().add("file-actions");
         myFilesLabel.getStyleClass().add("screen-title");
         myFolderLabel.getStyleClass().add("folder-path");
+        selectedFileActions.getStyleClass().add("file-actions");
+        statusBar.getStyleClass().add("status-bar");
 
         // Если в вертикальном контейнере появится дополнительное место, отдаем его списку files
         VBox.setVgrow(files, Priority.ALWAYS);
