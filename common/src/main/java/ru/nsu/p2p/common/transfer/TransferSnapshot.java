@@ -1,5 +1,7 @@
 package ru.nsu.p2p.common.transfer;
 
+import java.nio.file.Path;
+
 import ru.nsu.p2p.common.error.OperationError;
 import ru.nsu.p2p.common.model.PeerInfo;
 
@@ -32,7 +34,7 @@ public record TransferSnapshot(
     long verifiedBytes,
     int speedBytesPerSecond,
     PeerInfo activePeer,
-    String localPath,
+    Path localPath,
     OperationError lastError
 ) {
 
