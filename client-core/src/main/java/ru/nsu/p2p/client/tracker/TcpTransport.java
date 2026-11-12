@@ -55,18 +55,22 @@ final class TcpTransport {
                 ByteBuffer headerByteBuffer = ByteBuffer.wrap(readBufHeader);
                 short magic = headerByteBuffer.getShort();
                 if (magic != ProtocolRules.MAGIC_BYTES) {
-                    future.completeExceptionally(new IOException());
+                    future.completeExceptionally(new IOException("Неверный Magic Byte: " + magic));
                     return;
                 }
                 byte version = headerByteBuffer.get();
                 if (version != ProtocolRules.PROTOCOL_VERSION) {
-                    future.completeExceptionally(new IOException());
+                    future.completeExceptionally(new IOException("Несовместимый "
+                        + "по версии протокол\n"
+                        + "Пришедшая версия: " + version + "\nОжидаемая версия: "
+                        + ProtocolRules.PROTOCOL_VERSION));
                     return;
                 }
                 byte type = headerByteBuffer.get();
                 int payloadLen = headerByteBuffer.getInt();
                 if (0 > payloadLen || payloadLen > ProtocolRules.MAX_PAYLOAD_SIZE) {
-                    future.completeExceptionally(new IOException());
+                    future.completeExceptionally(new IOException("Недопустимая длина "
+                        + "payload: " + payloadLen));
                     return;
                 }
                 byte[] payload = new byte[payloadLen];
