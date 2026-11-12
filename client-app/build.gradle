@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin'
 }
 
 group = 'ru.nsu.p2p'
@@ -19,4 +21,13 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+javafx {
+    version = '27'
+    modules = ['javafx.controls']
+}
+
+application {
+    mainClass = 'ru.nsu.p2p.Main'
 }
