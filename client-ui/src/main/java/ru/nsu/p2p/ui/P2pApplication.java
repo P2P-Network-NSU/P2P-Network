@@ -306,8 +306,8 @@ public final class P2pApplication extends Application {
     }
 
     private void updateTransferSpeeds(long downloadBps, long uploadBps) {
-        downloadSpeedLabel.setText("↑ " + formatSpeed(downloadBps));
-        uploadSpeedLabel.setText("↓ " + formatSpeed(uploadBps));
+        downloadSpeedLabel.setText("↓ " + formatSpeed(downloadBps));
+        uploadSpeedLabel.setText("↑ " + formatSpeed(uploadBps));
     }
 
     private String formatSpeed(long bytesPerSecond) {

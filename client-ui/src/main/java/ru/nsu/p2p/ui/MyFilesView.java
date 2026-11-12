@@ -182,6 +182,22 @@ public class MyFilesView {
             File file = selected.file();
 
             if (file != null) {
+                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmation.initOwner(stage);
+                confirmation.setTitle("Удаление файла");
+                confirmation.setHeaderText(
+                        "Удалить «" + file.getName() + "» из папки раздачи?"
+                );
+                confirmation.setContentText(
+                        "Файл будет удалён без перемещения в корзину."
+                );
+
+                ButtonType answer = confirmation.showAndWait()
+                        .orElse(ButtonType.CANCEL);
+
+                if (answer != ButtonType.OK) {
+                    return;
+                }
                 new Thread(() -> {
                     try {
                         Files.delete(sharedDirectory.resolve(file.getName()));
@@ -202,6 +218,8 @@ public class MyFilesView {
                     }
                 }).start();
             }
+            // В ДАЛЬНЕЙШЕМ ОПОВЕЩАТЬ ЯДРО ОБ УДАЛЕНИИ ФАЙЛА
+            // FLAG_CHECK_LATER
         });
 
         // Добавление файла
@@ -360,7 +378,6 @@ public class MyFilesView {
 
                     // ЖДУ РЕАЛИЗАЦИЮ ОТ ЯДРА ----------------
                     // КНОПКА ПОКА ОБЩАЯ ДЛЯ ВСЕХ ФАЙЛОВ -----
-                    // ДОБАВИТЬ ИКОНКУ -----------------------
                     replaceStatusFileUploadButton.setOnAction(event -> {
                         if (replaceStatusFileUploadButton.getText().equals("Начать раздачу")) {
                             replaceStatusFileUploadButton.setText("Остановить раздачу");
