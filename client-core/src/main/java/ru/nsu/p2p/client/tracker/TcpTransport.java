@@ -17,6 +17,7 @@ import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.common.protocol.codec.MessageCodec;
 import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.core.MessageHeader;
+import ru.nsu.p2p.common.protocol.core.MessageType;
 import ru.nsu.p2p.common.protocol.core.ProtocolRules;
 import ru.nsu.p2p.common.protocol.tracker.TrackerErrorResponse;
 
@@ -37,10 +38,10 @@ final class TcpTransport {
     ) {
         if (
             trackerAddress == null ||
-            codec == null ||
-            executor == null ||
-            connectTimeoutMs < 0 ||
-            readTimeoutMs < 0
+                codec == null ||
+                executor == null ||
+                connectTimeoutMs < 0 ||
+                readTimeoutMs < 0
         ) {
             OperationError error = new OperationError(
                 ErrorCode.INVALID_ARGUMENT,
@@ -169,24 +170,33 @@ final class TcpTransport {
         byte[] readBufHeader = new byte[MessageHeader.BYTES];
         in.readFully(readBufHeader);
 
-        int payloadLen = extractPayloadLength(ByteBuffer.wrap(readBufHeader));
+        MessageHeader header = parseAndValidateHeader(readBufHeader);
+        int payloadLen = header.payloadLength();
 
-        byte[] fullMessage = Arrays.copyOf(readBufHeader,
-            MessageHeader.BYTES + payloadLen);
+        byte[] fullMessage = Arrays.copyOf(readBufHeader, MessageHeader.BYTES + payloadLen);
         in.readFully(fullMessage, MessageHeader.BYTES, payloadLen);
 
         return codec.decode(fullMessage);
     }
 
-    private int extractPayloadLength(ByteBuffer buf) {
-        readAndValidateMagic(buf);
-        readAndValidateVersion(buf);
-        buf.get();
-        return readAndValidatePayloadLength(buf);
+    private MessageHeader parseAndValidateHeader(byte[] headerBytes) {
+        ByteBuffer buffer = ByteBuffer.wrap(headerBytes);
+
+        short magic = buffer.getShort();
+        validateMagic(magic);
+
+        byte version = buffer.get();
+        validateVersion(version);
+
+        MessageType type = MessageType.fromId(buffer.get());
+
+        int payloadLen = buffer.getInt();
+        validatePayloadLength(payloadLen);
+
+        return new MessageHeader(magic, version, type, payloadLen);
     }
 
-    private void readAndValidateMagic(ByteBuffer buf) {
-        short magic = buf.getShort();
+    private void validateMagic(short magic) {
         if (magic != ProtocolRules.MAGIC_BYTES) {
             OperationError error = new OperationError(
                 ErrorCode.INVALID_STATE,
@@ -197,8 +207,7 @@ final class TcpTransport {
         }
     }
 
-    private void readAndValidateVersion(ByteBuffer buf) {
-        byte version = buf.get();
+    private void validateVersion(byte version) {
         if (version != ProtocolRules.PROTOCOL_VERSION) {
             OperationError error = new OperationError(
                 ErrorCode.INVALID_STATE,
@@ -212,8 +221,7 @@ final class TcpTransport {
         }
     }
 
-    private int readAndValidatePayloadLength(ByteBuffer buf) {
-        int payloadLen = buf.getInt();
+    private void validatePayloadLength(int payloadLen) {
         if (0 > payloadLen || payloadLen > ProtocolRules.MAX_PAYLOAD_SIZE) {
             OperationError error = new OperationError(
                 ErrorCode.INVALID_STATE,
@@ -223,7 +231,6 @@ final class TcpTransport {
             );
             throw new ClientOperationException(error);
         }
-        return payloadLen;
     }
 
     private Socket openConnectedSocket() throws IOException {
