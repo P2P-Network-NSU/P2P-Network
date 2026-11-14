@@ -1,4 +1,4 @@
-package ru.nsu.p2p.common.utils;
+package ru.nsu.p2p.common.protocol.core;
 
 /**
  * Жесткие правила и константы нашего кастомного бинарного TCP-протокола.
