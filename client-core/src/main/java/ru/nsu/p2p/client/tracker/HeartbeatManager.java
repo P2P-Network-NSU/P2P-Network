@@ -12,6 +12,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+/**
+ * Класс-демон, регулярно посылающий хартбиты на сервер.
+ */
 public final class HeartbeatManager {
 
     private final TrackerGateway gateway;
@@ -21,6 +24,14 @@ public final class HeartbeatManager {
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean stopped = new AtomicBoolean(false);
 
+    /**
+     * Создает менеджер-демон, посылающий хартбиты.
+     *
+     * @param peerId                ИД клиента.
+     * @param gateway               Мост для подключения к серверу.
+     * @param activeFilesSupplier   ссылка на сборщик активных файлов из
+     * {@link ru.nsu.p2p.client.sharing.ShareService}
+     */
     public HeartbeatManager(
         String peerId,
         TrackerGateway gateway,
@@ -68,7 +79,11 @@ public final class HeartbeatManager {
             activeFilesSupplier == null;
     }
 
-
+    /**
+     * Запускает менеджер.
+     *
+     * @param interval интервал отсылки хартбитов.
+     */
     public void start(Duration interval) {
         validateInterval(interval);
 
@@ -115,6 +130,9 @@ public final class HeartbeatManager {
         }
     }
 
+    /**
+     * Останавливает менеджер.
+     */
     public void stop() {
         if (stopped.compareAndSet(false, true)) {
             scheduler.shutdownNow();

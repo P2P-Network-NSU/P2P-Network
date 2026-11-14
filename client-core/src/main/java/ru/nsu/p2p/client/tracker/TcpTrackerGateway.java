@@ -30,12 +30,23 @@ import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
 import ru.nsu.p2p.common.protocol.tracker.PublishFileRequest;
 import ru.nsu.p2p.common.protocol.tracker.RegisterPeerRequest;
 
+/**
+ * Реализация {@link TrackerGateway} принимающая адрес сервера, кодек и тайм-ауты.
+ */
 public final class TcpTrackerGateway implements TrackerGateway {
 
     private final TcpTransport transport;
     private final ExecutorService executor;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
+    /**
+     * Создает мост подключения к серверу.
+     *
+     * @param address               адрес сервера.
+     * @param codec                 кодек.
+     * @param connectionTimeoutMs   тайм-аут подключения к серверу.
+     * @param readTimeoutMs         тайм-аут чтения с сервера.
+     */
     public TcpTrackerGateway(
         PeerAddress address,
         MessageCodec codec,
