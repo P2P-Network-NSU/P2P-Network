@@ -42,10 +42,10 @@ final class TcpTransport {
     ) {
         if (
             trackerAddress == null ||
-                codec == null ||
-                executor == null ||
-                connectTimeoutMs < 0 ||
-                readTimeoutMs < 0
+            codec == null ||
+            executor == null ||
+            connectTimeoutMs < 0 ||
+            readTimeoutMs < 0
         ) {
             throw createInvalidArgumentException("Переданы невалидные аргументы"
                 + " в конструктор TcpTransport");

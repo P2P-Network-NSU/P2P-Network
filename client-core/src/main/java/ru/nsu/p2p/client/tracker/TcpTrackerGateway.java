@@ -42,8 +42,9 @@ public final class TcpTrackerGateway implements TrackerGateway {
         int connectionTimeoutMs,
         int readTimeoutMs
     ) {
-        if (address == null || codec == null) {
-            throw createInvalidArgumentException("переданы null в конструктор TcpTrackerGateway");
+        if (address == null || codec == null || connectionTimeoutMs < 0 || readTimeoutMs < 0) {
+            throw createInvalidArgumentException("переданы неверные параметры "
+                + "в конструктор TcpTrackerGateway");
         }
 
         ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
