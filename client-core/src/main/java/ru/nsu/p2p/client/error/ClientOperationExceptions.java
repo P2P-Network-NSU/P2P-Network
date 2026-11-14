@@ -9,6 +9,8 @@ import ru.nsu.p2p.common.error.OperationError;
  */
 public final class ClientOperationExceptions {
 
+    private ClientOperationExceptions() {}
+
     public static ClientOperationException createInvalidArgumentException(String message) {
         OperationError error = new OperationError(
             ErrorCode.INVALID_ARGUMENT,
