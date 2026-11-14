@@ -1,0 +1,48 @@
+name: Storage tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - Client-core/base
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Storage tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v6
+
+      - name: Set up Java 26
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+          cache: gradle
+
+      - name: Run common and client-core tests
+        shell: bash
+        run: bash ./gradlew --no-daemon --console=plain --continue :common:test :client-core:test
+
+      - name: Upload JUnit XML and HTML reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storage-test-reports-${{ matrix.os }}
+          if-no-files-found: ignore
+          path: |
+            common/build/test-results/test/
+            common/build/reports/tests/test/
+            client-core/build/test-results/test/
+            client-core/build/reports/tests/test/
