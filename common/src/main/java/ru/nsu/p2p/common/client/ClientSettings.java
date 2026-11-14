@@ -17,6 +17,7 @@ import ru.nsu.p2p.common.model.PeerAddress;
  *                               Должен сохраняться между перезапусками приложения.
  * @param cacheDirectory         Абсолютный путь к папке на диске, куда будут сохраняться скачиваемые чанки и файлы.
  * @param connectTimeoutMs       Тайм-аут (в миллисекундах) на установку TCP-соединения с Трекером или другим пиром.
+ * @param trackerReadTimeOutMs   Тайм-аут (в миллисекундах) на чтение ответа с сервера.
  * @param chunkTimeoutMs         Тайм-аут (в миллисекундах) на ожидание ответа (ChunkPayloadMessage) от пира
  *                               после отправки запроса (ChunkRequestMessage). Если пир не ответил,
  *                               чанк запрашивается у другого узла.
@@ -29,6 +30,7 @@ public record ClientSettings(
     String peerId,
     Path cacheDirectory,
     int connectTimeoutMs,
+    int trackerReadTimeOutMs,
     int chunkTimeoutMs,
     int peerRefreshIntervalSec
 ) {
