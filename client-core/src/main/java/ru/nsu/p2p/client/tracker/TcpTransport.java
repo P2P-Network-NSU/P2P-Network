@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
@@ -43,12 +44,8 @@ final class TcpTransport {
                 connectTimeoutMs < 0 ||
                 readTimeoutMs < 0
         ) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_ARGUMENT,
-                "Переданы невалидные аргументы в конструктор TcpTransport",
-                false
-            );
-            throw new ClientOperationException(error);
+            throw createInvalidArgumentException("Переданы невалидные аргументы"
+                + " в конструктор TcpTransport");
         }
         this.trackerAddress = trackerAddress;
         this.codec = codec;
@@ -57,137 +54,37 @@ final class TcpTransport {
         this.readTimeoutMs = readTimeoutMs;
     }
 
-    private static void throwInvalidRequestException() {
-        OperationError error = new OperationError(
-            ErrorCode.INVALID_ARGUMENT,
-            "Передан null в качестве запроса",
-            false
-        );
-        throw new ClientOperationException(error);
-    }
-
-    private static ClientOperationException createClientOperationException(IOException e) {
-        OperationError error;
-        if (e instanceof SocketTimeoutException) {
-            error = new OperationError(
-                ErrorCode.CONNECTION_TIMEOUT,
-                e.getMessage(),
-                true
-            );
-        } else {
-            error = new OperationError(
-                ErrorCode.TRACKER_UNAVAILABLE,
-                e.getMessage(),
-                true
-            );
-        }
-        return new ClientOperationException(error, e);
-    }
-
-    private static <T> T validateAndCastResponse(
-        Message response,
-        Class<T> expectedResponseClass
-    ) {
-        if (response instanceof TrackerErrorResponse(OperationError error)) {
-            throw new ClientOperationException(error);
-        }
-
-        if (expectedResponseClass.isInstance(response)) {
-            return expectedResponseClass.cast(response);
-        } else {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Сервер сошел с ума "
-                    + "и шлёт какую-то хрень. "
-                    + "Присланное сервером: " + response.getClass().getSimpleName(),
-                false
-            );
-            throw new ClientOperationException(error);
-        }
-    }
-
-    private static MessageHeader parseAndValidateHeader(byte[] headerBytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(headerBytes);
-
-        short magic = buffer.getShort();
-        validateMagic(magic);
-
-        byte version = buffer.get();
-        validateVersion(version);
-
-        MessageType type = MessageType.fromId(buffer.get());
-
-        int payloadLen = buffer.getInt();
-        validatePayloadLength(payloadLen);
-
-        return new MessageHeader(magic, version, type, payloadLen);
-    }
-
-    private static void validateMagic(short magic) {
-        if (magic != ProtocolRules.MAGIC_BYTES) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Неверный Magic Byte: " + magic,
-                false
-            );
-            throw new ClientOperationException(error);
-        }
-    }
-
-    private static void validateVersion(byte version) {
-        if (version != ProtocolRules.PROTOCOL_VERSION) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Несовместимый "
-                    + "по версии протокол\n"
-                    + "Пришедшая версия: " + version
-                    + "\nОжидаемая версия: " + ProtocolRules.PROTOCOL_VERSION,
-                false
-            );
-            throw new ClientOperationException(error);
-        }
-    }
-
-    private static void validatePayloadLength(int payloadLen) {
-        if (0 > payloadLen || payloadLen > ProtocolRules.MAX_PAYLOAD_SIZE) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Недопустимая длина "
-                    + "payload: " + payloadLen,
-                false
-            );
-            throw new ClientOperationException(error);
-        }
-    }
-
     CompletableFuture<Void> sendOneWay(Message request) {
         if (request == null) {
-            throwInvalidRequestException();
+            throw createInvalidArgumentException("передан null вместо валидного запроса");
         }
 
-        return CompletableFuture.runAsync(() -> executeSendOneWayMessage(request), executor);
+        try {
+            return CompletableFuture.runAsync(() -> executeSendOneWayMessage(request), executor);
+        } catch (RejectedExecutionException e) {
+            throw createInvalidStateException("Добавление задачи в уже закрытый пул потоков");
+        }
     }
 
     <T extends Message> CompletableFuture<T> sendRequest(
         Message request, Class<T> expectedResponseClass
     ) {
         if (expectedResponseClass == null) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_ARGUMENT,
-                "Передан null в качестве ожидаемого класса. "
-                    + "Для сообщений без возвращаемого значения есть метод sendOneWay",
-                false
-            );
-            throw new ClientOperationException(error);
+            throw createInvalidArgumentException("Передан null в качестве ожидаемого класса. "
+                + "Для сообщений без возвращаемого значения есть метод sendOneWay");
         }
         if (request == null) {
-            throwInvalidRequestException();
+            throw createInvalidArgumentException("передан null вместо валидного запроса");
         }
 
-        return CompletableFuture.supplyAsync(() -> {
-            Message response = executeExchange(request);
-            return validateAndCastResponse(response, expectedResponseClass);
-        }, executor);
+        try {
+            return CompletableFuture.supplyAsync(() -> {
+                Message response = executeExchange(request);
+                return validateAndCastResponse(response, expectedResponseClass);
+            }, executor);
+        } catch (RejectedExecutionException e) {
+            throw createInvalidStateException("Добавление задачи в уже закрытый пул потоков");
+        }
     }
 
     private void executeSendOneWayMessage(Message request) throws ClientOperationException {
@@ -197,7 +94,7 @@ final class TcpTransport {
         ) {
             sendMessage(request, out);
         } catch (IOException e) {
-            throw createClientOperationException(e);
+            throw createTrackerException(e);
         }
     }
 
@@ -210,7 +107,24 @@ final class TcpTransport {
             sendMessage(request, out);
             return receiveMessage(in);
         } catch (IOException e) {
-            throw createClientOperationException(e);
+            throw createTrackerException(e);
+        }
+    }
+
+    private <T> T validateAndCastResponse(
+        Message response,
+        Class<T> expectedResponseClass
+    ) {
+        if (response instanceof TrackerErrorResponse(OperationError error)) {
+            throw new ClientOperationException(error);
+        }
+
+        if (expectedResponseClass.isInstance(response)) {
+            return expectedResponseClass.cast(response);
+        } else {
+            throw createInvalidStateException("Сервер сошел с ума "
+                + "и шлёт какую-то хрень. "
+                + "Присланное сервером: " + response.getClass().getSimpleName());
         }
     }
 
@@ -245,5 +159,80 @@ final class TcpTransport {
             socket.close();
             throw e;
         }
+    }
+
+    private MessageHeader parseAndValidateHeader(byte[] headerBytes) {
+        ByteBuffer buffer = ByteBuffer.wrap(headerBytes);
+
+        short magic = buffer.getShort();
+        validateMagic(magic);
+
+        byte version = buffer.get();
+        validateVersion(version);
+
+        MessageType type = MessageType.fromId(buffer.get());
+
+        int payloadLen = buffer.getInt();
+        validatePayloadLength(payloadLen);
+
+        return new MessageHeader(magic, version, type, payloadLen);
+    }
+
+    private void validateMagic(short magic) {
+        if (magic != ProtocolRules.MAGIC_BYTES) {
+            throw createInvalidStateException("Неверный Magic Byte: " + magic);
+        }
+    }
+
+    private void validateVersion(byte version) {
+        if (version != ProtocolRules.PROTOCOL_VERSION) {
+            throw createInvalidStateException("Несовместимый "
+                + "по версии протокол\n"
+                + "Пришедшая версия: " + version
+                + "\nОжидаемая версия: " + ProtocolRules.PROTOCOL_VERSION);
+        }
+    }
+
+    private void validatePayloadLength(int payloadLen) {
+        if (0 > payloadLen || payloadLen > ProtocolRules.MAX_PAYLOAD_SIZE) {
+            throw createInvalidStateException("Недопустимая длина "
+                + "payload: " + payloadLen);
+        }
+    }
+
+    private static ClientOperationException createInvalidArgumentException(String message) {
+        OperationError error = new OperationError(
+            ErrorCode.INVALID_ARGUMENT,
+            message,
+            false
+        );
+        return new ClientOperationException(error);
+    }
+
+    private static ClientOperationException createInvalidStateException(String message) {
+        OperationError error = new OperationError(
+            ErrorCode.INVALID_STATE,
+            message,
+            false
+        );
+        return new ClientOperationException(error);
+    }
+
+    private static ClientOperationException createTrackerException(IOException e) {
+        OperationError error;
+        if (e instanceof SocketTimeoutException) {
+            error = new OperationError(
+                ErrorCode.CONNECTION_TIMEOUT,
+                e.getMessage(),
+                true
+            );
+        } else {
+            error = new OperationError(
+                ErrorCode.TRACKER_UNAVAILABLE,
+                e.getMessage(),
+                true
+            );
+        }
+        return new ClientOperationException(error, e);
     }
 }
