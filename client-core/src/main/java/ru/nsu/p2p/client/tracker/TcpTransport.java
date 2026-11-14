@@ -57,14 +57,112 @@ final class TcpTransport {
         this.readTimeoutMs = readTimeoutMs;
     }
 
-    CompletableFuture<Void> sendOneWay(Message request) {
-        if (request == null) {
+    private static void throwInvalidRequestException() {
+        OperationError error = new OperationError(
+            ErrorCode.INVALID_ARGUMENT,
+            "Передан null в качестве запроса",
+            false
+        );
+        throw new ClientOperationException(error);
+    }
+
+    private static ClientOperationException createClientOperationException(IOException e) {
+        OperationError error;
+        if (e instanceof SocketTimeoutException) {
+            error = new OperationError(
+                ErrorCode.CONNECTION_TIMEOUT,
+                e.getMessage(),
+                true
+            );
+        } else {
+            error = new OperationError(
+                ErrorCode.TRACKER_UNAVAILABLE,
+                e.getMessage(),
+                true
+            );
+        }
+        return new ClientOperationException(error, e);
+    }
+
+    private static <T> T validateAndCastResponse(
+        Message response,
+        Class<T> expectedResponseClass
+    ) {
+        if (response instanceof TrackerErrorResponse(OperationError error)) {
+            throw new ClientOperationException(error);
+        }
+
+        if (expectedResponseClass.isInstance(response)) {
+            return expectedResponseClass.cast(response);
+        } else {
             OperationError error = new OperationError(
-                ErrorCode.INVALID_ARGUMENT,
-                "Передан null в качестве запроса",
+                ErrorCode.INVALID_STATE,
+                "Сервер сошел с ума "
+                    + "и шлёт какую-то хрень. "
+                    + "Присланное сервером: " + response.getClass().getSimpleName(),
                 false
             );
             throw new ClientOperationException(error);
+        }
+    }
+
+    private static MessageHeader parseAndValidateHeader(byte[] headerBytes) {
+        ByteBuffer buffer = ByteBuffer.wrap(headerBytes);
+
+        short magic = buffer.getShort();
+        validateMagic(magic);
+
+        byte version = buffer.get();
+        validateVersion(version);
+
+        MessageType type = MessageType.fromId(buffer.get());
+
+        int payloadLen = buffer.getInt();
+        validatePayloadLength(payloadLen);
+
+        return new MessageHeader(magic, version, type, payloadLen);
+    }
+
+    private static void validateMagic(short magic) {
+        if (magic != ProtocolRules.MAGIC_BYTES) {
+            OperationError error = new OperationError(
+                ErrorCode.INVALID_STATE,
+                "Неверный Magic Byte: " + magic,
+                false
+            );
+            throw new ClientOperationException(error);
+        }
+    }
+
+    private static void validateVersion(byte version) {
+        if (version != ProtocolRules.PROTOCOL_VERSION) {
+            OperationError error = new OperationError(
+                ErrorCode.INVALID_STATE,
+                "Несовместимый "
+                    + "по версии протокол\n"
+                    + "Пришедшая версия: " + version
+                    + "\nОжидаемая версия: " + ProtocolRules.PROTOCOL_VERSION,
+                false
+            );
+            throw new ClientOperationException(error);
+        }
+    }
+
+    private static void validatePayloadLength(int payloadLen) {
+        if (0 > payloadLen || payloadLen > ProtocolRules.MAX_PAYLOAD_SIZE) {
+            OperationError error = new OperationError(
+                ErrorCode.INVALID_STATE,
+                "Недопустимая длина "
+                    + "payload: " + payloadLen,
+                false
+            );
+            throw new ClientOperationException(error);
+        }
+    }
+
+    CompletableFuture<Void> sendOneWay(Message request) {
+        if (request == null) {
+            throwInvalidRequestException();
         }
 
         return CompletableFuture.runAsync(() -> executeSendOneWayMessage(request), executor);
@@ -83,12 +181,7 @@ final class TcpTransport {
             throw new ClientOperationException(error);
         }
         if (request == null) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_ARGUMENT,
-                "Передан null в качестве запроса",
-                false
-            );
-            throw new ClientOperationException(error);
+            throwInvalidRequestException();
         }
 
         return CompletableFuture.supplyAsync(() -> {
@@ -121,46 +214,6 @@ final class TcpTransport {
         }
     }
 
-    private ClientOperationException createClientOperationException(IOException e) {
-        OperationError error;
-        if (e instanceof SocketTimeoutException) {
-            error = new OperationError(
-                ErrorCode.CONNECTION_TIMEOUT,
-                e.getMessage(),
-                true
-            );
-        } else {
-            error = new OperationError(
-                ErrorCode.TRACKER_UNAVAILABLE,
-                e.getMessage(),
-                true
-            );
-        }
-        return new ClientOperationException(error, e);
-    }
-
-    private <T> T validateAndCastResponse(
-        Message response,
-        Class<T> expectedResponseClass
-    ) {
-        if (response instanceof TrackerErrorResponse(OperationError error)) {
-            throw new ClientOperationException(error);
-        }
-
-        if (expectedResponseClass.isInstance(response)) {
-            return expectedResponseClass.cast(response);
-        } else {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Сервер сошел с ума "
-                    + "и шлёт какую-то хрень. "
-                    + "Присланное сервером: " + response.getClass().getSimpleName(),
-                false
-            );
-            throw new ClientOperationException(error);
-        }
-    }
-
     private void sendMessage(Message message, DataOutputStream out) throws IOException {
         out.write(codec.encode(message));
         out.flush();
@@ -177,60 +230,6 @@ final class TcpTransport {
         in.readFully(fullMessage, MessageHeader.BYTES, payloadLen);
 
         return codec.decode(fullMessage);
-    }
-
-    private MessageHeader parseAndValidateHeader(byte[] headerBytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(headerBytes);
-
-        short magic = buffer.getShort();
-        validateMagic(magic);
-
-        byte version = buffer.get();
-        validateVersion(version);
-
-        MessageType type = MessageType.fromId(buffer.get());
-
-        int payloadLen = buffer.getInt();
-        validatePayloadLength(payloadLen);
-
-        return new MessageHeader(magic, version, type, payloadLen);
-    }
-
-    private void validateMagic(short magic) {
-        if (magic != ProtocolRules.MAGIC_BYTES) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Неверный Magic Byte: " + magic,
-                false
-            );
-            throw new ClientOperationException(error);
-        }
-    }
-
-    private void validateVersion(byte version) {
-        if (version != ProtocolRules.PROTOCOL_VERSION) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Несовместимый "
-                    + "по версии протокол\n"
-                    + "Пришедшая версия: " + version
-                    + "\nОжидаемая версия: " + ProtocolRules.PROTOCOL_VERSION,
-                false
-            );
-            throw new ClientOperationException(error);
-        }
-    }
-
-    private void validatePayloadLength(int payloadLen) {
-        if (0 > payloadLen || payloadLen > ProtocolRules.MAX_PAYLOAD_SIZE) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Недопустимая длина "
-                    + "payload: " + payloadLen,
-                false
-            );
-            throw new ClientOperationException(error);
-        }
     }
 
     private Socket openConnectedSocket() throws IOException {
