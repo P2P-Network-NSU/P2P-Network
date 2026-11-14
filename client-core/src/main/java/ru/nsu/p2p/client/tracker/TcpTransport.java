@@ -213,8 +213,8 @@ final class TcpTransport {
                 ErrorCode.INVALID_STATE,
                 "Несовместимый "
                     + "по версии протокол\n"
-                    + "Пришедшая версия: " + version +
-                    "\nОжидаемая версия: " + ProtocolRules.PROTOCOL_VERSION,
+                    + "Пришедшая версия: " + version
+                    + "\nОжидаемая версия: " + ProtocolRules.PROTOCOL_VERSION,
                 false
             );
             throw new ClientOperationException(error);
