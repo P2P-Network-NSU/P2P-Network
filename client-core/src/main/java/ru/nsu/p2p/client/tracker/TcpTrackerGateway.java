@@ -2,6 +2,7 @@ package ru.nsu.p2p.client.tracker;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,6 +16,16 @@ import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.common.model.PeerList;
 import ru.nsu.p2p.common.protocol.codec.MessageCodec;
+import ru.nsu.p2p.common.protocol.tracker.CatalogRequest;
+import ru.nsu.p2p.common.protocol.tracker.CatalogResponse;
+import ru.nsu.p2p.common.protocol.tracker.GetManifestRequest;
+import ru.nsu.p2p.common.protocol.tracker.GetManifestResponse;
+import ru.nsu.p2p.common.protocol.tracker.GetPeersRequest;
+import ru.nsu.p2p.common.protocol.tracker.GetPeersResponse;
+import ru.nsu.p2p.common.protocol.tracker.HeartbeatRequest;
+import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
+import ru.nsu.p2p.common.protocol.tracker.PublishFileRequest;
+import ru.nsu.p2p.common.protocol.tracker.RegisterPeerRequest;
 
 public class TcpTrackerGateway implements TrackerGateway {
 
@@ -77,14 +88,19 @@ public class TcpTrackerGateway implements TrackerGateway {
     public CompletionStage<Duration> register(String peerId, PeerAddress address) {
         ifClosedThrowUseAfterCloseException();
 
-        return null;
+        RegisterPeerRequest request = new RegisterPeerRequest(peerId, address);
+
+        return transport.sendRequest(request, PeerLeaseResponse.class)
+            .thenApply(response -> Duration.ofSeconds(response.heartbeatIntervalSeconds()));
     }
 
     @Override
     public CompletionStage<Void> heartbeat(String peerId, Collection<String> fileIds) {
         ifClosedThrowUseAfterCloseException();
 
-        return null;
+        HeartbeatRequest request = new HeartbeatRequest(peerId, List.copyOf(fileIds));
+
+        return transport.sendOneWay(request);
     }
 
     @Override
@@ -96,34 +112,45 @@ public class TcpTrackerGateway implements TrackerGateway {
     ) {
         ifClosedThrowUseAfterCloseException();
 
-        return null;
+        PublishFileRequest request = new PublishFileRequest(peerId, manifest, title, description);
+
+        return transport.sendOneWay(request);
     }
 
     @Override
     public CompletionStage<CatalogPage> search(CatalogQuery query) {
         ifClosedThrowUseAfterCloseException();
 
-        return null;
+        CatalogRequest request = new CatalogRequest(query);
+
+        return transport.sendRequest(request, CatalogResponse.class)
+            .thenApply(CatalogResponse::page);
     }
 
     @Override
     public CompletionStage<FileManifest> getManifest(String fileId) {
         ifClosedThrowUseAfterCloseException();
 
-        return null;
+        GetManifestRequest request = new GetManifestRequest(fileId);
+
+        return transport.sendRequest(request, GetManifestResponse.class)
+            .thenApply(GetManifestResponse::manifest);
     }
 
     @Override
     public CompletionStage<PeerList> getPeers(String fileId) {
         ifClosedThrowUseAfterCloseException();
 
-        return null;
+        GetPeersRequest request = new GetPeersRequest(fileId);
+
+        return transport.sendRequest(request, GetPeersResponse.class)
+            .thenApply(GetPeersResponse::peerList);
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            executor.close();
+            executor.shutdownNow();
         }
     }
 }
