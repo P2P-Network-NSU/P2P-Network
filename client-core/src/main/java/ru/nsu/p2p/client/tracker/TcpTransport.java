@@ -1,5 +1,8 @@
 package ru.nsu.p2p.client.tracker;
 
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidStateException;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -111,6 +114,24 @@ final class TcpTransport {
         }
     }
 
+    private static ClientOperationException createTrackerException(IOException e) {
+        OperationError error;
+        if (e instanceof SocketTimeoutException) {
+            error = new OperationError(
+                ErrorCode.CONNECTION_TIMEOUT,
+                e.getMessage(),
+                true
+            );
+        } else {
+            error = new OperationError(
+                ErrorCode.TRACKER_UNAVAILABLE,
+                e.getMessage(),
+                true
+            );
+        }
+        return new ClientOperationException(error, e);
+    }
+
     private <T> T validateAndCastResponse(
         Message response,
         Class<T> expectedResponseClass
@@ -201,41 +222,5 @@ final class TcpTransport {
             throw createInvalidStateException("Недопустимая длина "
                 + "payload: " + payloadLen);
         }
-    }
-
-    private static ClientOperationException createInvalidArgumentException(String message) {
-        OperationError error = new OperationError(
-            ErrorCode.INVALID_ARGUMENT,
-            message,
-            false
-        );
-        return new ClientOperationException(error);
-    }
-
-    private static ClientOperationException createInvalidStateException(String message) {
-        OperationError error = new OperationError(
-            ErrorCode.INVALID_STATE,
-            message,
-            false
-        );
-        return new ClientOperationException(error);
-    }
-
-    private static ClientOperationException createTrackerException(IOException e) {
-        OperationError error;
-        if (e instanceof SocketTimeoutException) {
-            error = new OperationError(
-                ErrorCode.CONNECTION_TIMEOUT,
-                e.getMessage(),
-                true
-            );
-        } else {
-            error = new OperationError(
-                ErrorCode.TRACKER_UNAVAILABLE,
-                e.getMessage(),
-                true
-            );
-        }
-        return new ClientOperationException(error, e);
     }
 }

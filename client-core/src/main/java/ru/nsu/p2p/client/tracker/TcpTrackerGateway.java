@@ -1,5 +1,7 @@
 package ru.nsu.p2p.client.tracker;
 
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
+
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -181,13 +183,5 @@ public final class TcpTrackerGateway implements TrackerGateway {
         return new ClientOperationException(error);
     }
 
-    private static ClientOperationException createInvalidArgumentException(String message) {
-        OperationError error = new OperationError(
-            ErrorCode.INVALID_ARGUMENT,
-            message,
-            false
-        );
-        return new ClientOperationException(error);
-    }
 
 }
