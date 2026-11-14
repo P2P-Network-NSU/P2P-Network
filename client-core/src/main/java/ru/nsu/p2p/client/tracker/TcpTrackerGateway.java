@@ -3,6 +3,7 @@ package ru.nsu.p2p.client.tracker;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,7 +28,7 @@ import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
 import ru.nsu.p2p.common.protocol.tracker.PublishFileRequest;
 import ru.nsu.p2p.common.protocol.tracker.RegisterPeerRequest;
 
-public class TcpTrackerGateway implements TrackerGateway {
+public final class TcpTrackerGateway implements TrackerGateway {
 
     private final TcpTransport transport;
     private final ExecutorService executor;
@@ -40,7 +41,7 @@ public class TcpTrackerGateway implements TrackerGateway {
         int readTimeoutMs
     ) {
         if (address == null || codec == null) {
-            throwConstructorInvalidArgumentException();
+            throw createInvalidArgumentException("переданы null в конструктор TcpTrackerGateway");
         }
 
         ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
@@ -57,46 +58,31 @@ public class TcpTrackerGateway implements TrackerGateway {
 
     TcpTrackerGateway(TcpTransport transport, ExecutorService executor) {
         if (transport == null || executor == null) {
-            throwConstructorInvalidArgumentException();
+            throw createInvalidArgumentException("переданы null в конструктор TcpTrackerGateway");
         }
 
         this.transport = transport;
         this.executor = executor;
     }
 
-    private static void throwConstructorInvalidArgumentException() {
-        OperationError error = new OperationError(
-            ErrorCode.INVALID_ARGUMENT,
-            "переданы null в конструктор TcpTrackerGateway",
-            false
-        );
-        throw new ClientOperationException(error);
-    }
-
-    private void ifClosedThrowUseAfterCloseException() {
-        if (closed.get()) {
-            OperationError error = new OperationError(
-                ErrorCode.INVALID_STATE,
-                "использование TcpTrackerGateway после закрытия",
-                false
-            );
-            throw new ClientOperationException(error);
-        }
-    }
 
     @Override
     public CompletionStage<Duration> register(String peerId, PeerAddress address) {
-        ifClosedThrowUseAfterCloseException();
+        validateNull(address, "address");
+        validateBlank(peerId, "peerId");
+        ensureOpen();
 
         RegisterPeerRequest request = new RegisterPeerRequest(peerId, address);
-
         return transport.sendRequest(request, PeerLeaseResponse.class)
             .thenApply(response -> Duration.ofSeconds(response.heartbeatIntervalSeconds()));
+
     }
 
     @Override
     public CompletionStage<Void> heartbeat(String peerId, Collection<String> fileIds) {
-        ifClosedThrowUseAfterCloseException();
+        validateBlank(peerId, "peerId");
+        validateCollection(fileIds, "fileIds");
+        ensureOpen();
 
         HeartbeatRequest request = new HeartbeatRequest(peerId, List.copyOf(fileIds));
 
@@ -110,7 +96,11 @@ public class TcpTrackerGateway implements TrackerGateway {
         String title,
         String description
     ) {
-        ifClosedThrowUseAfterCloseException();
+        validateBlank(peerId, "peerId");
+        validateNull(manifest, "manifest");
+        validateBlank(title, "title");
+        validateNull(description, "description");
+        ensureOpen();
 
         PublishFileRequest request = new PublishFileRequest(peerId, manifest, title, description);
 
@@ -119,7 +109,8 @@ public class TcpTrackerGateway implements TrackerGateway {
 
     @Override
     public CompletionStage<CatalogPage> search(CatalogQuery query) {
-        ifClosedThrowUseAfterCloseException();
+        validateNull(query, "query");
+        ensureOpen();
 
         CatalogRequest request = new CatalogRequest(query);
 
@@ -129,7 +120,8 @@ public class TcpTrackerGateway implements TrackerGateway {
 
     @Override
     public CompletionStage<FileManifest> getManifest(String fileId) {
-        ifClosedThrowUseAfterCloseException();
+        validateBlank(fileId, "fileId");
+        ensureOpen();
 
         GetManifestRequest request = new GetManifestRequest(fileId);
 
@@ -139,7 +131,8 @@ public class TcpTrackerGateway implements TrackerGateway {
 
     @Override
     public CompletionStage<PeerList> getPeers(String fileId) {
-        ifClosedThrowUseAfterCloseException();
+        validateBlank(fileId, "fileId");
+        ensureOpen();
 
         GetPeersRequest request = new GetPeersRequest(fileId);
 
@@ -153,4 +146,48 @@ public class TcpTrackerGateway implements TrackerGateway {
             executor.shutdownNow();
         }
     }
+
+    private void ensureOpen() {
+        if (closed.get()) {
+            throw createUseAfterCloseException();
+        }
+    }
+
+    private void validateNull(Object obj, String paramName) {
+        if (obj == null) {
+            throw createInvalidArgumentException("передан null, вместо валидного " + paramName);
+        }
+    }
+
+    private void validateBlank(String str, String paramName) {
+        if (str == null || str.isBlank()) {
+            throw createInvalidArgumentException("передан пустой " + paramName);
+        }
+    }
+
+    private void validateCollection(Collection<String> collection, String paramName) {
+        if (collection == null || collection.stream().anyMatch(Objects::isNull)) {
+            throw createInvalidArgumentException("передана коллекция "
+                + paramName + " с null или null место нее");
+        }
+    }
+
+    private static ClientOperationException createUseAfterCloseException() {
+        OperationError error = new OperationError(
+            ErrorCode.INVALID_STATE,
+            "использование TcpTrackerGateway после закрытия",
+            false
+        );
+        return new ClientOperationException(error);
+    }
+
+    private static ClientOperationException createInvalidArgumentException(String message) {
+        OperationError error = new OperationError(
+            ErrorCode.INVALID_ARGUMENT,
+            message,
+            false
+        );
+        return new ClientOperationException(error);
+    }
+
 }

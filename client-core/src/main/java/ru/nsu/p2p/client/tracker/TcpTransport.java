@@ -162,20 +162,23 @@ final class TcpTransport {
     }
 
     private MessageHeader parseAndValidateHeader(byte[] headerBytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(headerBytes);
+        try {
+            ByteBuffer buffer = ByteBuffer.wrap(headerBytes);
 
-        short magic = buffer.getShort();
-        validateMagic(magic);
+            short magic = buffer.getShort();
+            validateMagic(magic);
 
-        byte version = buffer.get();
-        validateVersion(version);
+            byte version = buffer.get();
+            validateVersion(version);
 
-        MessageType type = MessageType.fromId(buffer.get());
+            MessageType type = MessageType.fromId(buffer.get());
+            int payloadLen = buffer.getInt();
+            validatePayloadLength(payloadLen);
 
-        int payloadLen = buffer.getInt();
-        validatePayloadLength(payloadLen);
-
-        return new MessageHeader(magic, version, type, payloadLen);
+            return new MessageHeader(magic, version, type, payloadLen);
+        } catch (IllegalArgumentException e) {
+            throw createInvalidArgumentException("Неизвестный тип сообщения от сервера.");
+        }
     }
 
     private void validateMagic(short magic) {
