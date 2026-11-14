@@ -155,6 +155,15 @@ public final class TcpTrackerGateway implements TrackerGateway {
         }
     }
 
+    private static ClientOperationException createUseAfterCloseException() {
+        OperationError error = new OperationError(
+            ErrorCode.INVALID_STATE,
+            "использование TcpTrackerGateway после закрытия",
+            false
+        );
+        return new ClientOperationException(error);
+    }
+
     private void validateNull(Object obj, String paramName) {
         if (obj == null) {
             throw createInvalidArgumentException("передан null, вместо валидного " + paramName);
@@ -173,15 +182,4 @@ public final class TcpTrackerGateway implements TrackerGateway {
                 + paramName + " с null или null место нее");
         }
     }
-
-    private static ClientOperationException createUseAfterCloseException() {
-        OperationError error = new OperationError(
-            ErrorCode.INVALID_STATE,
-            "использование TcpTrackerGateway после закрытия",
-            false
-        );
-        return new ClientOperationException(error);
-    }
-
-
 }
