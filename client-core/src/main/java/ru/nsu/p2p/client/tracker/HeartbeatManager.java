@@ -38,7 +38,7 @@ public final class HeartbeatManager {
         Supplier<Collection<String>> activeFilesSupplier
     ) {
         if (
-            isCorrectConstructorsArguments(peerId, gateway, activeFilesSupplier)
+            isIncorrectConstructorsArguments(peerId, gateway, activeFilesSupplier)
         ) {
             throw createInvalidArgumentException("Переданы невалидные аргументы"
                 + " в конструктор HeartbeatManager");
@@ -55,12 +55,13 @@ public final class HeartbeatManager {
         ScheduledExecutorService scheduler
     ) {
         if (
-            isCorrectConstructorsArguments(peerId, gateway, activeFilesSupplier) ||
+            isIncorrectConstructorsArguments(peerId, gateway, activeFilesSupplier) ||
                 scheduler == null
         ) {
             throw createInvalidArgumentException("Переданы невалидные аргументы"
                 + " в конструктор HeartbeatManager");
         }
+
 
         this.peerId = peerId;
         this.gateway = gateway;
@@ -68,7 +69,7 @@ public final class HeartbeatManager {
         this.scheduler = scheduler;
     }
 
-    private static boolean isCorrectConstructorsArguments(
+    private static boolean isIncorrectConstructorsArguments(
         String peerId,
         TrackerGateway gateway,
         Supplier<Collection<String>> activeFilesSupplier
