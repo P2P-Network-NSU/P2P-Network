@@ -7,9 +7,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.common.protocol.core.MessageType;
 import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
