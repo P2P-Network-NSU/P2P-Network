@@ -5,7 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import ru.nsu.p2p.common.utils.MessageCodec;
+
+import ru.nsu.p2p.common.protocol.codec.MessageCodec;
 import ru.nsu.p2p.tracker.handler.HandlerRegistry;
 
 public class TcpServer {

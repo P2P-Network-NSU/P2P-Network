@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import ru.nsu.p2p.common.protocol.codec.MessageCodec;
 import ru.nsu.p2p.common.protocol.core.MessageType;
-import ru.nsu.p2p.common.utils.MessageCodec;
 import ru.nsu.p2p.tracker.handler.HandlerRegistry;
 import ru.nsu.p2p.tracker.handler.message_handlers.CatalogHandler;
 import ru.nsu.p2p.tracker.handler.message_handlers.GetManifestHandler;
