@@ -2,13 +2,14 @@ package ru.nsu.p2p.tracker.test_client.network;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+
 import ru.nsu.p2p.common.model.PeerAddress;
+import ru.nsu.p2p.common.protocol.codec.MessageCodec;
 import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.core.MessageType;
+import ru.nsu.p2p.common.protocol.core.ProtocolRules;
 import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
 import ru.nsu.p2p.common.protocol.tracker.RegisterPeerRequest;
-import ru.nsu.p2p.common.utils.MessageCodec;
-import ru.nsu.p2p.common.utils.ProtocolRules;
 
 public class DummyCodec implements MessageCodec {
 

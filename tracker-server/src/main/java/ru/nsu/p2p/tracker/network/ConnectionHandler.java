@@ -6,17 +6,21 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+
 import ru.nsu.p2p.common.error.ClientOperationException;
+import ru.nsu.p2p.common.protocol.codec.MessageCodec;
 import ru.nsu.p2p.common.protocol.core.Message;
 import ru.nsu.p2p.common.protocol.core.MessageHeader;
+import ru.nsu.p2p.common.protocol.core.ProtocolRules;
 import ru.nsu.p2p.common.protocol.tracker.TrackerErrorResponse;
-import ru.nsu.p2p.common.utils.MessageCodec;
-import ru.nsu.p2p.common.utils.ProtocolRules;
 import ru.nsu.p2p.tracker.handler.HandlerRegistry;
 import ru.nsu.p2p.tracker.handler.MessageHandler;
 
 public class ConnectionHandler implements Runnable {
 
+    public static final int SOCKET_TIMEOUT = 5_000;
+    public static final int READ_HEADER_TIMEOUT = 30_000;
+    public static final int READ_PAYLOAD_TIMEOUT = 60_000;
     private final Socket socket;
     private final MessageCodec codec;
     private final HandlerRegistry registry;
@@ -35,23 +39,7 @@ public class ConnectionHandler implements Runnable {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream())
         ) {
             byte[] fullMessage = readMessage(in);
-
-            Message inputMessage = codec.decode(fullMessage);
-            MessageHandler<Message> messageHandler = registry.find(inputMessage.getType());
-            if (messageHandler != null) {
-                try {
-                    Message outputMessage = messageHandler.handle(inputMessage);
-                    if (outputMessage != null) {
-                        byte[] outputBytes = codec.encode(outputMessage);
-                        writeMessage(out, outputBytes);
-                    }
-                } catch (ClientOperationException e) {
-                    var errorResponse = new TrackerErrorResponse(e.getError());
-                    writeMessage(out, codec.encode(errorResponse));
-                }
-            } else {
-                System.err.println("Нет обработчика для типа: " + inputMessage.getType());
-            }
+            processMessage(fullMessage, out);
         } catch (IOException e) {
             System.err.println("Ошибка соединения с клиентом "
                 + socket.getInetAddress() + ": " + e.getMessage());
@@ -61,15 +49,34 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
+    private void processMessage(byte[] fullMessage, DataOutputStream out) throws IOException {
+        Message inputMessage = codec.decode(fullMessage);
+        MessageHandler<Message> messageHandler = registry.find(inputMessage.getType());
+        if (messageHandler != null) {
+            try {
+                Message outputMessage = messageHandler.handle(inputMessage);
+                if (outputMessage != null) {
+                    byte[] outputBytes = codec.encode(outputMessage);
+                    writeMessage(out, outputBytes);
+                }
+            } catch (ClientOperationException e) {
+                var errorResponse = new TrackerErrorResponse(e.getError());
+                writeMessage(out, codec.encode(errorResponse));
+            }
+        } else {
+            System.err.println("Нет обработчика для типа: " + inputMessage.getType());
+        }
+    }
+
     private byte[] readMessage(DataInputStream in) throws IOException {
-        // защита от медленного Лориса
-        socket.setSoTimeout(5_000);
+        // защита от атаки медленного Лориса.
+        socket.setSoTimeout(SOCKET_TIMEOUT);
         long startTime = System.currentTimeMillis();
 
         byte[] headerBytes = new byte[MessageHeader.BYTES];
         in.readFully(headerBytes);
 
-        if (System.currentTimeMillis() - startTime > 30_000) {
+        if (System.currentTimeMillis() - startTime > READ_HEADER_TIMEOUT) {
             throw new IOException("Превышено время чтения заголовка "
                 + "(Атака медленным Лорисом)");
         }
@@ -97,7 +104,7 @@ public class ConnectionHandler implements Runnable {
         byte[] payload = new byte[payloadLength];
         in.readFully(payload);
 
-        if (System.currentTimeMillis() - startTime > 60_000) {
+        if (System.currentTimeMillis() - startTime > READ_PAYLOAD_TIMEOUT) {
             throw new IOException("Превышено время чтения тела сообщения "
                 + "(Атака медленным Лорисом)");
         }

@@ -5,7 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import ru.nsu.p2p.common.utils.MessageCodec;
+
+import ru.nsu.p2p.common.protocol.codec.MessageCodec;
 import ru.nsu.p2p.tracker.handler.HandlerRegistry;
 
 public class TcpServer {
@@ -33,33 +34,36 @@ public class TcpServer {
         virtualThreadPool = Executors.newVirtualThreadPerTaskExecutor();
         running = true;
 
-        Thread acceptThread = new Thread(() -> {
-            System.out.println("Tracker TCP Server слушает порт " + port);
-            try {
-                while (running) {
-                    Socket clientSocket = serverSocket.accept();
-
-                    System.out.println("Подключился пир с адресом: " +
-                        clientSocket.getInetAddress());
-
-                    ConnectionHandler connectionHandler = new ConnectionHandler(
-                        clientSocket,
-                        codec,
-                        handlerRegistry
-                    );
-
-                    virtualThreadPool.submit(connectionHandler);
-                }
-            } catch (IOException e) {
-                if (running) {
-                    System.err.println("Ошибка при принятии соединения: " + e.getMessage());
-                } else {
-                    System.out.println("Цикл принятия соединений штатно остановлен.");
-                }
-            }
-        }, "Tracker-Accept-Loop");
+        Thread acceptThread = new Thread(this::serverListeningLoop, "Tracker-Accept-Loop");
 
         acceptThread.start();
+    }
+
+    private void serverListeningLoop() {
+        System.out.println("Tracker TCP Server слушает порт " + port);
+
+        try {
+            while (running) {
+                Socket clientSocket = serverSocket.accept();
+
+                System.out.println("Подключился пир с адресом: " +
+                    clientSocket.getInetAddress());
+
+                ConnectionHandler connectionHandler = new ConnectionHandler(
+                    clientSocket,
+                    codec,
+                    handlerRegistry
+                );
+
+                virtualThreadPool.submit(connectionHandler);
+            }
+        } catch (IOException e) {
+            if (running) {
+                System.err.println("Ошибка при принятии соединения: " + e.getMessage());
+            } else {
+                System.out.println("Цикл принятия соединений штатно остановлен.");
+            }
+        }
     }
 
     public void stop() {

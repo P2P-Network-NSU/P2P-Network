@@ -1,11 +1,12 @@
 package ru.nsu.p2p.tracker;
 
-import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import ru.nsu.p2p.common.protocol.codec.MessageCodec;
+import ru.nsu.p2p.common.protocol.codec.tracker_impl.TrackerMessageCodec;
 import ru.nsu.p2p.common.protocol.core.MessageType;
-import ru.nsu.p2p.common.utils.MessageCodec;
 import ru.nsu.p2p.tracker.handler.HandlerRegistry;
 import ru.nsu.p2p.tracker.handler.message_handlers.CatalogHandler;
 import ru.nsu.p2p.tracker.handler.message_handlers.GetManifestHandler;
@@ -24,6 +25,8 @@ import ru.nsu.p2p.tracker.service.TrackerService;
 
 public final class TrackerMain {
 
+    public static final int PORT = 45500;
+
     public static void main(String[] args) {
         final CatalogRepository fileStorage = new InMemoryCatalogRepository();
         final PeerRepository peerStorage = new InMemoryPeerRepository();
@@ -37,8 +40,8 @@ public final class TrackerMain {
         registry.register(MessageType.TRACKER_PUBLISH_REQ, new PublishHandler(service));
         registry.register(MessageType.TRACKER_GET_MANIFEST_REQ, new GetManifestHandler(service));
 
-        final MessageCodec codec = null; // ждем-с реализацию со стороны клиента
-        final TcpServer server = new TcpServer(45500, codec, registry);
+        final MessageCodec codec = new TrackerMessageCodec();
+        final TcpServer server = new TcpServer(PORT, codec, registry);
 
         ScheduledExecutorService peerEvictionService = Executors.newSingleThreadScheduledExecutor();
         peerEvictionService.scheduleAtFixedRate(
@@ -49,7 +52,7 @@ public final class TrackerMain {
         );
         try {
             server.start();
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Не удалось создать сервер: " + e.getMessage());
         }
     }
