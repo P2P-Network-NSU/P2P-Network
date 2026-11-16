@@ -81,25 +81,6 @@ public class ConnectionHandler implements Runnable {
                 + "(Атака медленным Лорисом)");
         }
 
-        int payloadLength = getPayloadLength(headerBytes);
-
-        byte[] payload = new byte[payloadLength];
-        in.readFully(payload);
-
-        if (System.currentTimeMillis() - startTime > READ_PAYLOAD_TIMEOUT) {
-            throw new IOException("Превышено время чтения тела сообщения "
-                + "(Атака медленным Лорисом)");
-        }
-
-        byte[] fullMessage = Arrays.copyOf(headerBytes,
-            headerBytes.length + payload.length);
-        System.arraycopy(payload, 0, fullMessage,
-            headerBytes.length, payload.length);
-
-        return fullMessage;
-    }
-
-    private int getPayloadLength(byte[] headerBytes) throws IOException {
         ByteBuffer headerBuffer = ByteBuffer.wrap(headerBytes);
 
         short magic = headerBuffer.getShort();
@@ -119,7 +100,21 @@ public class ConnectionHandler implements Runnable {
         if (!validatePayloadLength(payloadLength)) {
             throw new IOException("Недопустимая длина payload: " + payloadLength);
         }
-        return payloadLength;
+
+        byte[] payload = new byte[payloadLength];
+        in.readFully(payload);
+
+        if (System.currentTimeMillis() - startTime > READ_PAYLOAD_TIMEOUT) {
+            throw new IOException("Превышено время чтения тела сообщения "
+                + "(Атака медленным Лорисом)");
+        }
+
+        byte[] fullMessage = Arrays.copyOf(headerBytes,
+            headerBytes.length + payload.length);
+        System.arraycopy(payload, 0, fullMessage,
+            headerBytes.length, payload.length);
+
+        return fullMessage;
     }
 
     private void writeMessage(DataOutputStream out, byte[] messageBytes) throws IOException {
