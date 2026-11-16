@@ -39,29 +39,32 @@ public class ConnectionHandler implements Runnable {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream())
         ) {
             byte[] fullMessage = readMessage(in);
-
-            Message inputMessage = codec.decode(fullMessage);
-            MessageHandler<Message> messageHandler = registry.find(inputMessage.getType());
-            if (messageHandler != null) {
-                try {
-                    Message outputMessage = messageHandler.handle(inputMessage);
-                    if (outputMessage != null) {
-                        byte[] outputBytes = codec.encode(outputMessage);
-                        writeMessage(out, outputBytes);
-                    }
-                } catch (ClientOperationException e) {
-                    var errorResponse = new TrackerErrorResponse(e.getError());
-                    writeMessage(out, codec.encode(errorResponse));
-                }
-            } else {
-                System.err.println("Нет обработчика для типа: " + inputMessage.getType());
-            }
+            processMessage(fullMessage, out);
         } catch (IOException e) {
             System.err.println("Ошибка соединения с клиентом "
                 + socket.getInetAddress() + ": " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Внутренняя ошибка сервера: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void processMessage(byte[] fullMessage, DataOutputStream out) throws IOException {
+        Message inputMessage = codec.decode(fullMessage);
+        MessageHandler<Message> messageHandler = registry.find(inputMessage.getType());
+        if (messageHandler != null) {
+            try {
+                Message outputMessage = messageHandler.handle(inputMessage);
+                if (outputMessage != null) {
+                    byte[] outputBytes = codec.encode(outputMessage);
+                    writeMessage(out, outputBytes);
+                }
+            } catch (ClientOperationException e) {
+                var errorResponse = new TrackerErrorResponse(e.getError());
+                writeMessage(out, codec.encode(errorResponse));
+            }
+        } else {
+            System.err.println("Нет обработчика для типа: " + inputMessage.getType());
         }
     }
 
@@ -78,6 +81,25 @@ public class ConnectionHandler implements Runnable {
                 + "(Атака медленным Лорисом)");
         }
 
+        int payloadLength = getPayloadLength(headerBytes);
+
+        byte[] payload = new byte[payloadLength];
+        in.readFully(payload);
+
+        if (System.currentTimeMillis() - startTime > READ_PAYLOAD_TIMEOUT) {
+            throw new IOException("Превышено время чтения тела сообщения "
+                + "(Атака медленным Лорисом)");
+        }
+
+        byte[] fullMessage = Arrays.copyOf(headerBytes,
+            headerBytes.length + payload.length);
+        System.arraycopy(payload, 0, fullMessage,
+            headerBytes.length, payload.length);
+
+        return fullMessage;
+    }
+
+    private int getPayloadLength(byte[] headerBytes) throws IOException {
         ByteBuffer headerBuffer = ByteBuffer.wrap(headerBytes);
 
         short magic = headerBuffer.getShort();
@@ -97,21 +119,7 @@ public class ConnectionHandler implements Runnable {
         if (!validatePayloadLength(payloadLength)) {
             throw new IOException("Недопустимая длина payload: " + payloadLength);
         }
-
-        byte[] payload = new byte[payloadLength];
-        in.readFully(payload);
-
-        if (System.currentTimeMillis() - startTime > READ_PAYLOAD_TIMEOUT) {
-            throw new IOException("Превышено время чтения тела сообщения "
-                + "(Атака медленным Лорисом)");
-        }
-
-        byte[] fullMessage = Arrays.copyOf(headerBytes,
-            headerBytes.length + payload.length);
-        System.arraycopy(payload, 0, fullMessage,
-            headerBytes.length, payload.length);
-
-        return fullMessage;
+        return payloadLength;
     }
 
     private void writeMessage(DataOutputStream out, byte[] messageBytes) throws IOException {
