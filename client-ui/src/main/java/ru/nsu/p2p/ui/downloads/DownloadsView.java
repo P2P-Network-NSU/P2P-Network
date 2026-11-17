@@ -6,7 +6,9 @@ import javafx.scene.layout.VBox;
 
 public class DownloadsView {
 
-    public static Parent create() {
+    private final Parent root;
+
+    public DownloadsView() {
         Label title = new Label("Загрузки");
         title.getStyleClass().add("screen-title");
 
@@ -15,6 +17,10 @@ public class DownloadsView {
         VBox view = new VBox(title, placeholder);
         view.getStyleClass().add("downloads-view");
 
-        return view;
+        this.root = view;
+    }
+
+    public Parent getView() {
+        return root;
     }
 }

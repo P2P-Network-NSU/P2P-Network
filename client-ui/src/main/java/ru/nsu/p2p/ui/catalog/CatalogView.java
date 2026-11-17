@@ -6,7 +6,9 @@ import javafx.scene.layout.VBox;
 
 public class CatalogView {
 
-    public static Parent create() {
+    private final Parent root;
+
+    public CatalogView() {
         Label title = new Label("Каталог сети");
         title.getStyleClass().add("screen-title");
 
@@ -15,6 +17,10 @@ public class CatalogView {
         VBox view = new VBox(title, placeholder);
         view.getStyleClass().add("catalog-view");
 
-        return view;
+        this.root = view;
+    }
+
+    public Parent getView() {
+        return root;
     }
 }

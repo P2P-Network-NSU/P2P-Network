@@ -141,19 +141,20 @@ public final class P2pApplication extends Application {
         BorderPane root = new BorderPane();
 
         // Окно с каталогом сети
-        Parent catalogNetworkView = CatalogView.create();
+        Parent catalogNetworkView = new CatalogView().getView();
 
         // Окно с загрузками
-        Parent downloadsView = DownloadsView.create();
+        Parent downloadsView = new DownloadsView().getView();
 
         // Окно с файлами пользователя
-        Parent myFilesView = MyFilesView.create(stage, sharedDirectory);
+        MyFilesView myFilesScreen = new MyFilesView(stage, sharedDirectory);
+        Parent myFilesView = myFilesScreen.getView();
 
         // Окно со стримом
-        Parent streamView = StreamView.create();
+        Parent streamView = new StreamView().getView();
 
         // Окно с настройками
-        Parent settingsView = SettingsView.create();
+        Parent settingsView = new SettingsView().getView();
 
         // Левое меню с кнопками
         Parent leftMenuWithButtons = createLeftMenuWithButtons(

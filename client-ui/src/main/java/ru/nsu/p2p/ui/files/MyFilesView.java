@@ -30,7 +30,31 @@ import javafx.scene.Parent;
 
 public class MyFilesView {
 
-    public static Parent create(Stage stage, Path sharedDirectory) {
+    private final Stage stage;
+    private final Path sharedDirectory;
+    private final Parent root;
+
+    private final TableView<SharedFileItem> files = new TableView<>();
+    private final Label statusLabel = new Label("Выберите файл в таблице");
+
+    private final Label sizeFileLabel = new Label();
+    private final Label statusFileLabel = new Label();
+    private final Label countUploadsFileLabel = new Label();
+
+    private final Button replaceStatusFileUploadButton =
+            new Button("Начать раздачу");
+
+    public MyFilesView(Stage stage, Path sharedDirectory) {
+        this.stage = stage;
+        this.sharedDirectory = sharedDirectory;
+        this.root = createView();
+    }
+
+    public Parent getView() {
+        return root;
+    }
+
+    private Parent createView() {
         // Объекты окна
         Label myFilesLabel = new Label("Мои файлы");
         Label myFolderLabel = new Label("Папка: " + sharedDirectory);
@@ -39,114 +63,8 @@ public class MyFilesView {
         Button deleteButton = new Button("Удалить файл");
         Button refreshButton = new Button("Обновить");
 
-        // Таблица
-        TableView<SharedFileItem> files = new TableView<>();
-        files.getStyleClass().add("files-table");
-        files.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS
-        );
-
-        // Статус-бар
-        Label sizeFileLabel = new Label();
-        Label statusFileLabel = new Label();
-        Label countUploadsFileLabel = new Label();
-
-        sizeFileLabel.managedProperty().bind(
-                sizeFileLabel.textProperty().isNotEmpty()
-        );
-
-        statusFileLabel.managedProperty().bind(
-                statusFileLabel.textProperty().isNotEmpty()
-        );
-
-        countUploadsFileLabel.managedProperty().bind(
-                countUploadsFileLabel.textProperty().isNotEmpty()
-        );
-
-        Label statusLabel = new Label("Выберите файл в таблице");
-        statusLabel.getStyleClass().add("status-label");
-
-        // Button openFileButton = new Button("Открыть файл");
-        // FLAG_CHECK_LATER
-        // В БУДУЩЕМ ПОЛУЧАТЬ СТАТУС РАЗДАЧИ ДЛЯ ПЕРВОНАЧАЛЬНОГО ЗНАЧЕНИЯ ОТ ЯДРА ---
-        Button replaceStatusFileUploadButton = new Button("Начать раздачу");
-        replaceStatusFileUploadButton.setGraphic(
-                createIcon("/icons/start-sharing.svg")
-        );
-        // FLAG_CHECK_LATER ---------------------------------------------------------
-
-        TableColumn<SharedFileItem, String> nameColumn = new TableColumn<>("Имя");
-        TableColumn<SharedFileItem, Number> sizeColumn = new TableColumn<>("Размер, МиБ");
-        TableColumn<SharedFileItem, ShareState> statusColumn = new TableColumn<>("Состояние");
-
-        // Фабрики значений
-        nameColumn.setCellValueFactory(cellData ->
-                new ReadOnlyStringWrapper(cellData.getValue().getName())
-        );
-
-        sizeColumn.setCellValueFactory(cellData ->
-                new ReadOnlyLongWrapper(cellData.getValue().getSize())
-        );
-
-        statusColumn.setCellValueFactory(cellData ->
-                new ReadOnlyObjectWrapper<>(cellData.getValue().state())
-        );
-
-        // Фабрика ячейки
-        sizeColumn.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(Number bytes, boolean empty) {
-                super.updateItem(bytes, empty);
-
-                if (empty || bytes == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    double sizeInMiB = bytes.doubleValue() / (1024.0 * 1024.0);
-                    setText(String.format("%.3f", sizeInMiB));
-                    setStyle("-fx-alignment: center-right;");
-                }
-            }
-        });
-
-        statusColumn.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(ShareState state, boolean empty) {
-                super.updateItem(state, empty);
-
-                if (empty || state == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    switch (state) {
-                        case PREPARING -> {
-                            setText("Подготовка...");
-                            setStyle("-fx-text-fill: #ecc94b; -fx-alignment: center;"); // Желтый
-                        }
-                        case SHARING -> {
-                            setText("Раздаётся");
-                            setStyle("-fx-text-fill: #48bb78; -fx-alignment: center;"); // Зеленый
-                        }
-                        case STOPPED -> {
-                            setText("Остановлен");
-                            setStyle("-fx-text-fill: #a0aec0; -fx-alignment: center;"); // Серый
-                        }
-                        case FAILED -> {
-                            setText("Ошибка");
-                            setStyle("-fx-text-fill: #f56565; -fx-alignment: center;"); // Красный
-                        }
-                    }
-                }
-            }
-        });
-
-        nameColumn.setPrefWidth(450);
-        sizeColumn.setPrefWidth(150);
-        statusColumn.setPrefWidth(200);
-
-        files.getColumns().add(nameColumn);
-        files.getColumns().add(sizeColumn);
-        files.getColumns().add(statusColumn);
+        configureTable();
+        configureFileDetails();
 
         // Заполняем таблицу файлами из папки раздачи
         try {
@@ -299,27 +217,7 @@ public class MyFilesView {
             }).start();
         });
 
-        // Обновление таблицы файлов
-        refreshButton.setOnAction(event -> {
-            try {
-                File[] updatedFiles = readSharedFiles(sharedDirectory);
-
-                files.getItems().clear();
-
-                for (File file : updatedFiles) {
-                    files.getItems().add(new SharedFileItem(file, ShareState.STOPPED));
-                }
-
-                statusLabel.setText("Список файлов обновлен (" + files.getItems().size() + ")");
-            } catch (IOException e) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.initOwner(stage);
-                alert.setTitle("Ошибка обновления");
-                alert.setHeaderText("Не удалось обновить список файлов");
-                alert.setContentText("Проверьте доступность папки:\n" + e.getMessage());
-                alert.showAndWait();
-            }
-        });
+        refreshButton.setOnAction(event -> refreshFiles());
 
         // Добавление к кнопкам SVG иконок
         openFolderButton.setGraphic(createIcon("/icons/folder.svg"));
@@ -426,5 +324,137 @@ public class MyFilesView {
         myFilesView.setAlignment(Pos.TOP_LEFT);
 
         return myFilesView;
+    }
+
+    public void refreshFiles() {
+        try {
+            File[] updatedFiles = readSharedFiles(sharedDirectory);
+
+            files.getItems().clear();
+
+            for (File file : updatedFiles) {
+                files.getItems().add(
+                        new SharedFileItem(file, ShareState.STOPPED)
+                );
+            }
+
+            statusLabel.setText(
+                    "Список файлов обновлен (" + files.getItems().size() + ")"
+            );
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.initOwner(stage);
+            alert.setTitle("Ошибка обновления");
+            alert.setHeaderText("Не удалось обновить список файлов");
+            alert.setContentText(
+                    "Проверьте доступность папки:\n" + e.getMessage()
+            );
+            alert.showAndWait();
+        }
+    }
+
+    private void configureTable() {
+        // Таблица
+        files.getStyleClass().add("files-table");
+        files.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS
+        );
+
+        TableColumn<SharedFileItem, String> nameColumn = new TableColumn<>("Имя");
+        TableColumn<SharedFileItem, Number> sizeColumn = new TableColumn<>("Размер, МиБ");
+        TableColumn<SharedFileItem, ShareState> statusColumn = new TableColumn<>("Состояние");
+
+        // Фабрики значений
+        nameColumn.setCellValueFactory(cellData ->
+                new ReadOnlyStringWrapper(cellData.getValue().getName())
+        );
+
+        sizeColumn.setCellValueFactory(cellData ->
+                new ReadOnlyLongWrapper(cellData.getValue().getSize())
+        );
+
+        statusColumn.setCellValueFactory(cellData ->
+                new ReadOnlyObjectWrapper<>(cellData.getValue().state())
+        );
+
+        // Фабрика ячейки
+        sizeColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Number bytes, boolean empty) {
+                super.updateItem(bytes, empty);
+
+                if (empty || bytes == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    double sizeInMiB = bytes.doubleValue() / (1024.0 * 1024.0);
+                    setText(String.format("%.3f", sizeInMiB));
+                    setStyle("-fx-alignment: center-right;");
+                }
+            }
+        });
+
+        statusColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(ShareState state, boolean empty) {
+                super.updateItem(state, empty);
+
+                if (empty || state == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    switch (state) {
+                        case PREPARING -> {
+                            setText("Подготовка...");
+                            setStyle("-fx-text-fill: #ecc94b; -fx-alignment: center;"); // Желтый
+                        }
+                        case SHARING -> {
+                            setText("Раздаётся");
+                            setStyle("-fx-text-fill: #48bb78; -fx-alignment: center;"); // Зеленый
+                        }
+                        case STOPPED -> {
+                            setText("Остановлен");
+                            setStyle("-fx-text-fill: #a0aec0; -fx-alignment: center;"); // Серый
+                        }
+                        case FAILED -> {
+                            setText("Ошибка");
+                            setStyle("-fx-text-fill: #f56565; -fx-alignment: center;"); // Красный
+                        }
+                    }
+                }
+            }
+        });
+
+        nameColumn.setPrefWidth(450);
+        sizeColumn.setPrefWidth(150);
+        statusColumn.setPrefWidth(200);
+
+        files.getColumns().add(nameColumn);
+        files.getColumns().add(sizeColumn);
+        files.getColumns().add(statusColumn);
+    }
+
+    private void configureFileDetails() {
+        sizeFileLabel.managedProperty().bind(
+                sizeFileLabel.textProperty().isNotEmpty()
+        );
+
+        statusFileLabel.managedProperty().bind(
+                statusFileLabel.textProperty().isNotEmpty()
+        );
+
+        countUploadsFileLabel.managedProperty().bind(
+                countUploadsFileLabel.textProperty().isNotEmpty()
+        );
+
+        statusLabel.getStyleClass().add("status-label");
+
+        // Button openFileButton = new Button("Открыть файл");
+        // FLAG_CHECK_LATER
+        // В БУДУЩЕМ ПОЛУЧАТЬ СТАТУС РАЗДАЧИ ДЛЯ ПЕРВОНАЧАЛЬНОГО ЗНАЧЕНИЯ ОТ ЯДРА ---
+        replaceStatusFileUploadButton.setGraphic(
+                createIcon("/icons/start-sharing.svg")
+        );
+        // FLAG_CHECK_LATER ---------------------------------------------------------
     }
 }
