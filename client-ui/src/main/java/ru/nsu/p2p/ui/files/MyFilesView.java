@@ -25,7 +25,6 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static ru.nsu.p2p.ui.files.SharedFilesService.readSharedFiles;
@@ -170,14 +169,18 @@ public class MyFilesView {
                 Path source = file.toPath();
                 Path destination = sharedDirectory.resolve(file.getName());
                 try {
-                    Files.copy(source, destination);
+                    SharedFileItem copied = SharedFilesService.copyFile(
+                            file.toPath(),
+                            sharedDirectory
+                    );
 
-                    // Безопасное обновление UI из фонового потока
                     Platform.runLater(() -> {
-                        files.getItems().add(
-                                new SharedFileItem(destination.toFile(), ShareState.STOPPED)
+                        files.getItems().add(copied);
+
+                        statusLabel.setText(
+                                "Добавлен: " + copied.getName()
+                                        + ". Размер - " + copied.getSize() + " байт."
                         );
-                        statusLabel.setText("Добавлен: " + file.getName() + ". Размер - " + file.length() + " байт.");
                     });
 
                 } catch (FileAlreadyExistsException e) {
@@ -241,7 +244,7 @@ public class MyFilesView {
             }
             new Thread(() -> {
                 try {
-                    Files.delete(sharedDirectory.resolve(file.getName()));
+                    SharedFilesService.deleteFile(sharedDirectory, file.getName());
 
                     Platform.runLater(() -> {
                         files.getItems().removeIf(item -> item.file().equals(file));
@@ -268,7 +271,7 @@ public class MyFilesView {
             File[] sharedFiles = readSharedFiles(sharedDirectory);
 
             for (File file : sharedFiles) {
-                files.getItems().add(new SharedFileItem(file, ShareState.STOPPED));
+                files.getItems().add(SharedFilesService.readFileItem(file));
             }
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -289,7 +292,7 @@ public class MyFilesView {
 
             for (File file : updatedFiles) {
                 files.getItems().add(
-                        new SharedFileItem(file, ShareState.STOPPED)
+                        SharedFilesService.readFileItem(file)
                 );
             }
 
