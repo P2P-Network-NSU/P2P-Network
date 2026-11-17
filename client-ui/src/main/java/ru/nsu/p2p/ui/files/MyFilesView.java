@@ -1,10 +1,9 @@
-package ru.nsu.p2p.ui;
+package ru.nsu.p2p.ui.files;
 
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -15,7 +14,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import ru.nsu.p2p.common.transfer.ShareSnapshot;
 import ru.nsu.p2p.common.transfer.ShareState;
 
 import java.awt.*;
@@ -25,8 +23,8 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static ru.nsu.p2p.ui.SharedFilesService.readSharedFiles;
-import static ru.nsu.p2p.ui.Utils.createIcon;
+import static ru.nsu.p2p.ui.files.SharedFilesService.readSharedFiles;
+import static ru.nsu.p2p.ui.icons.Utils.createIcon;
 
 public class MyFilesView {
 

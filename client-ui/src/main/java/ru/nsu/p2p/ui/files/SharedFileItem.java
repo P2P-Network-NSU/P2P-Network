@@ -1,4 +1,4 @@
-package ru.nsu.p2p.ui;
+package ru.nsu.p2p.ui.files;
 
 import ru.nsu.p2p.common.transfer.ShareState;
 import java.io.File;

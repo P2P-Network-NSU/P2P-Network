@@ -1,4 +1,4 @@
-package ru.nsu.p2p.ui;
+package ru.nsu.p2p.ui.icons;
 
 import java.io.IOException;
 import java.io.InputStream;

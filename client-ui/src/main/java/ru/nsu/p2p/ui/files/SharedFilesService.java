@@ -1,4 +1,4 @@
-package ru.nsu.p2p.ui;
+package ru.nsu.p2p.ui.files;
 
 import java.io.File;
 import java.io.IOException;

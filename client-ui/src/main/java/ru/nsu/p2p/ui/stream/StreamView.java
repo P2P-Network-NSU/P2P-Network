@@ -1,4 +1,4 @@
-package ru.nsu.p2p.ui;
+package ru.nsu.p2p.ui.stream;
 
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;

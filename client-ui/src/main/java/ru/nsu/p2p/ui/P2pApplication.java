@@ -16,24 +16,21 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.nio.file.Path;
 import javafx.scene.control.Alert;
-import ru.nsu.p2p.common.api.ClientLifecycle;
 import ru.nsu.p2p.common.client.ClientStatusSnapshot;
 import ru.nsu.p2p.common.client.ConnectionState;
-import ru.nsu.p2p.common.error.ErrorCode;
-import ru.nsu.p2p.common.error.OperationError;
 
 import java.nio.file.FileAlreadyExistsException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static ru.nsu.p2p.ui.CatalogView.createCatalogNetworkView;
-import static ru.nsu.p2p.ui.DownloadsView.createDownloadsView;
-import static ru.nsu.p2p.ui.MyFilesView.createMyFilesView;
-import static ru.nsu.p2p.ui.SettingsView.createSettingsView;
-import static ru.nsu.p2p.ui.SharedFilesService.createSharedDirectory;
-import static ru.nsu.p2p.ui.StreamView.createStreamView;
-import static ru.nsu.p2p.ui.Utils.createIcon;
-import static ru.nsu.p2p.ui.Utils.setActiveButton;
+import static ru.nsu.p2p.ui.catalog.CatalogView.createCatalogNetworkView;
+import static ru.nsu.p2p.ui.downloads.DownloadsView.createDownloadsView;
+import static ru.nsu.p2p.ui.files.MyFilesView.createMyFilesView;
+import static ru.nsu.p2p.ui.settings.SettingsView.createSettingsView;
+import static ru.nsu.p2p.ui.files.SharedFilesService.createSharedDirectory;
+import static ru.nsu.p2p.ui.stream.StreamView.createStreamView;
+import static ru.nsu.p2p.ui.icons.Utils.createIcon;
+import static ru.nsu.p2p.ui.icons.Utils.setActiveButton;
 
 // Stage - Окно
 // Scene - Содержимое окна
