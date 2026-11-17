@@ -26,9 +26,11 @@ import java.nio.file.Path;
 import static ru.nsu.p2p.ui.files.SharedFilesService.readSharedFiles;
 import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
+import javafx.scene.Parent;
+
 public class MyFilesView {
 
-    public static VBox createMyFilesView(Stage stage, Path sharedDirectory) {
+    public static Parent create(Stage stage, Path sharedDirectory) {
         // Объекты окна
         Label myFilesLabel = new Label("Мои файлы");
         Label myFolderLabel = new Label("Папка: " + sharedDirectory);

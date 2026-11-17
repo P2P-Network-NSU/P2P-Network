@@ -23,13 +23,16 @@ import java.nio.file.FileAlreadyExistsException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static ru.nsu.p2p.ui.catalog.CatalogView.createCatalogNetworkView;
-import static ru.nsu.p2p.ui.downloads.DownloadsView.createDownloadsView;
-import static ru.nsu.p2p.ui.files.MyFilesView.createMyFilesView;
-import static ru.nsu.p2p.ui.settings.SettingsView.createSettingsView;
 import static ru.nsu.p2p.ui.files.SharedFilesService.createSharedDirectory;
-import static ru.nsu.p2p.ui.stream.StreamView.createStreamView;
 import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
+
+import javafx.scene.Parent;
+
+import ru.nsu.p2p.ui.files.MyFilesView;
+import ru.nsu.p2p.ui.catalog.CatalogView;
+import ru.nsu.p2p.ui.downloads.DownloadsView;
+import ru.nsu.p2p.ui.settings.SettingsView;
+import ru.nsu.p2p.ui.stream.StreamView;
 
 // Stage - Окно
 // Scene - Содержимое окна
@@ -138,27 +141,30 @@ public final class P2pApplication extends Application {
         BorderPane root = new BorderPane();
 
         // Окно с каталогом сети
-        VBox catalogNetworkView = createCatalogNetworkView();
+        Parent catalogNetworkView = CatalogView.create();
 
         // Окно с загрузками
-        VBox downloadsView = createDownloadsView();
+        Parent downloadsView = DownloadsView.create();
 
         // Окно с файлами пользователя
-        VBox myFilesView = createMyFilesView(stage, sharedDirectory);
+        Parent myFilesView = MyFilesView.create(stage, sharedDirectory);
 
         // Окно со стримом
-        VBox streamView = createStreamView();
+        Parent streamView = StreamView.create();
 
         // Окно с настройками
-        VBox settingsView = createSettingsView();
+        Parent settingsView = SettingsView.create();
 
         // Левое меню с кнопками
-        VBox leftMenuWithButtons = createLeftMenuWithButtons(root,
-                                                        myFilesView,
-                                                        catalogNetworkView,
-                                                        downloadsView,
-                                                        streamView,
-                                                        settingsView);
+        Parent leftMenuWithButtons = createLeftMenuWithButtons(
+                root,
+                myFilesView,
+                catalogNetworkView,
+                downloadsView,
+                streamView,
+                settingsView
+        );
+
         leftMenuWithButtons.getStyleClass().add("left-menu");
 
         // Нижняя полоска со статусом подключения и скоростью скачивания/отдачи
@@ -210,12 +216,14 @@ public final class P2pApplication extends Application {
         stage.show();
     }
 
-    private static VBox createLeftMenuWithButtons (BorderPane root,
-                                                VBox myFilesView,
-                                                VBox catalogNetworkView,
-                                                VBox downloadsView,
-                                                VBox streamView,
-                                                VBox settingsView) {
+    private static Parent createLeftMenuWithButtons(
+            BorderPane root,
+            Parent myFilesView,
+            Parent catalogNetworkView,
+            Parent downloadsView,
+            Parent streamView,
+            Parent settingsView
+    ) {
         // Создание кнопок меню
         Button catalogNetworkButton = new Button("Каталог сети");
         Button downloadsButton = new Button("Загрузки");
