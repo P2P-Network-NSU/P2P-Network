@@ -9,7 +9,7 @@ public class SettingsView {
     private final Parent root;
 
     public SettingsView() {
-        Label title = new Label("Загрузки");
+        Label title = new Label("Настройки");
         title.getStyleClass().add("screen-title");
 
         Label placeholder = new Label("Раздел находится в разработке");

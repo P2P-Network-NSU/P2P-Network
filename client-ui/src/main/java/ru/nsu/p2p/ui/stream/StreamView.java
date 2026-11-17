@@ -9,7 +9,7 @@ public class StreamView {
     private final Parent root;
 
     public StreamView() {
-        Label title = new Label("Загрузки");
+        Label title = new Label("Стрим");
         title.getStyleClass().add("screen-title");
 
         Label placeholder = new Label("Раздел находится в разработке");
