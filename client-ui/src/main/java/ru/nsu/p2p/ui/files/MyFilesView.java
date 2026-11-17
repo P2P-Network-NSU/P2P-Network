@@ -24,7 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static ru.nsu.p2p.ui.files.SharedFilesService.readSharedFiles;
-import static ru.nsu.p2p.ui.icons.Utils.createIcon;
+import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
 public class MyFilesView {
 

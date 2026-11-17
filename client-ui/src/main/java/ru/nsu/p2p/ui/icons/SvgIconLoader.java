@@ -7,7 +7,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.FillRule;
 import javafx.scene.shape.Rectangle;
@@ -16,11 +15,11 @@ import javafx.scene.transform.Scale;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-public final class Utils {
+public final class SvgIconLoader {
     private static final double ICON_SIZE = 20;
     private static final double SVG_SIZE = 512;
 
-    private Utils() {
+    private SvgIconLoader() {
     }
 
     /**
@@ -28,7 +27,7 @@ public final class Utils {
      * Вызывается в JavaFX Application Thread, например при создании кнопки.
      */
     public static Node createIcon(String resourcePath) {
-        try (InputStream stream = Utils.class.getResourceAsStream(resourcePath)) {
+        try (InputStream stream = SvgIconLoader.class.getResourceAsStream(resourcePath)) {
             if (stream == null) {
                 throw new IllegalArgumentException("Не найдена иконка: " + resourcePath);
             }
@@ -80,12 +79,5 @@ public final class Utils {
         shape.setFill(Color.BLACK);
         shape.setFillRule(FillRule.EVEN_ODD);
         return shape;
-    }
-
-    public static void setActiveButton(Button activeButton, Button... allButtons) {
-        for (Button b : allButtons) {
-            b.getStyleClass().remove("active");
-        }
-        activeButton.getStyleClass().add("active");
     }
 }

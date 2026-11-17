@@ -29,8 +29,7 @@ import static ru.nsu.p2p.ui.files.MyFilesView.createMyFilesView;
 import static ru.nsu.p2p.ui.settings.SettingsView.createSettingsView;
 import static ru.nsu.p2p.ui.files.SharedFilesService.createSharedDirectory;
 import static ru.nsu.p2p.ui.stream.StreamView.createStreamView;
-import static ru.nsu.p2p.ui.icons.Utils.createIcon;
-import static ru.nsu.p2p.ui.icons.Utils.setActiveButton;
+import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
 // Stage - Окно
 // Scene - Содержимое окна
@@ -320,5 +319,12 @@ public final class P2pApplication extends Application {
                 "%.1f МиБ/с",
                 bytesPerSecond / (1024.0 * 1024)
         );
+    }
+
+    private static void setActiveButton(Button activeButton, Button... allButtons) {
+        for (Button button : allButtons) {
+            button.getStyleClass().remove("active");
+        }
+        activeButton.getStyleClass().add("active");
     }
 }
