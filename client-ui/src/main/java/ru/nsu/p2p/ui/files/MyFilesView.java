@@ -5,9 +5,14 @@ import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -16,7 +21,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import ru.nsu.p2p.common.transfer.ShareState;
 
-import java.awt.*;
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -29,6 +34,9 @@ import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 import javafx.scene.Parent;
 
 public class MyFilesView {
+    private static final double NAME_COLUMN_WIDTH = 450;
+    private static final double SIZE_COLUMN_WIDTH = 150;
+    private static final double STATUS_COLUMN_WIDTH = 200;
 
     private final Stage stage;
     private final Path sharedDirectory;
@@ -44,6 +52,13 @@ public class MyFilesView {
     private final Button replaceStatusFileUploadButton =
             new Button("Начать раздачу");
 
+    private final Button openFolderButton = new Button("Открыть папку");
+    private final Button addFileButton = new Button("Добавить файл...");
+    private final Button deleteButton = new Button("Удалить файл");
+    private final Button refreshButton = new Button("Обновить");
+
+    private final VBox statusBar = new VBox();
+
     public MyFilesView(Stage stage, Path sharedDirectory) {
         this.stage = stage;
         this.sharedDirectory = sharedDirectory;
@@ -55,18 +70,200 @@ public class MyFilesView {
     }
 
     private Parent createView() {
-        // Объекты окна
-        Label myFilesLabel = new Label("Мои файлы");
-        Label myFolderLabel = new Label("Папка: " + sharedDirectory);
-        Button openFolderButton = new Button("Открыть папку");
-        Button addFileButton = new Button("Добавить файл...");
-        Button deleteButton = new Button("Удалить файл");
-        Button refreshButton = new Button("Обновить");
-
         configureTable();
         configureFileDetails();
+        configureActions();
+        configureSharingPlaceholder();
 
-        // Заполняем таблицу файлами из папки раздачи
+        files.getSelectionModel().selectedItemProperty()
+                .addListener((observable, oldItem, selectedItem) ->
+                        showFileDetails(selectedItem)
+                );
+
+        loadInitialFiles();
+
+        return createLayout();
+    }
+
+    private void showFileDetails(SharedFileItem selectedItem) {
+        if (selectedItem == null) {
+            statusLabel.setText("Выберите файл в таблице");
+            statusFileLabel.setText("");
+            sizeFileLabel.setText("");
+            countUploadsFileLabel.setText("");
+            statusBar.getStyleClass().remove("card");
+            return;
+        }
+
+        double sizeInMiB = selectedItem.getSize() / (1024.0 * 1024.0);
+
+        statusLabel.setText("Выбранный файл: " + selectedItem.getName());
+        sizeFileLabel.setText("Размер: " + String.format("%.3f", sizeInMiB) + " МиБ");
+        statusFileLabel.setText("Состояние: " + selectedItem.state().toString());
+        // В ДАЛЬНЕЙШЕМ ПОДКЛЮЧИТЬ ЯДРО ---
+        countUploadsFileLabel.setText("Количество активных раздач: ---");
+        //countUploadsFileLabel.setText(ShareSnapshot.activeUploadCount());
+        // FLAG_CHECK_LATER ---------------
+
+        //openFileButton.setOnAction(event -> {
+        //
+        //});
+        // FLAG_CHECK_LATER
+
+        if (!statusBar.getStyleClass().contains("card")) {
+            statusBar.getStyleClass().add("card");
+        }
+    }
+
+    private void configureSharingPlaceholder() {
+        // ЖДУ РЕАЛИЗАЦИЮ ОТ ЯДРА ----------------
+        // КНОПКА ПОКА ОБЩАЯ ДЛЯ ВСЕХ ФАЙЛОВ -----
+        replaceStatusFileUploadButton.setOnAction(event -> {
+            if (replaceStatusFileUploadButton.getText().equals("Начать раздачу")) {
+                replaceStatusFileUploadButton.setText("Остановить раздачу");
+                replaceStatusFileUploadButton.setGraphic(
+                        createIcon("/icons/stop-sharing.svg")
+                );
+            }
+            else {
+                replaceStatusFileUploadButton.setText("Начать раздачу");
+                replaceStatusFileUploadButton.setGraphic(
+                        createIcon("/icons/start-sharing.svg")
+                );
+            }
+        });
+        // FLAG_CHECK_LATER ----------------------
+    }
+
+    private void openSharedFolder() {
+        new Thread(() -> {
+            try {
+                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                    Desktop.getDesktop().open(sharedDirectory.toFile());
+                } else {
+                    throw new UnsupportedOperationException("Действие открытия не поддерживается системой.");
+                }
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.initOwner(stage);
+                    alert.setTitle("Ошибка");
+                    alert.setHeaderText("Не удалось открыть проводник");
+                    alert.setContentText(e.getMessage());
+                    alert.showAndWait();
+                });
+            }
+        }).start();
+    }
+
+    private void chooseAndCopyFile() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Выбери файл");
+        File file = chooser.showOpenDialog(stage);
+
+        if (file != null) {
+            addFileButton.setDisable(true);
+            addFileButton.setText("Копирование…");
+
+            refreshButton.setDisable(true);
+            new Thread(() -> {
+                Path source = file.toPath();
+                Path destination = sharedDirectory.resolve(file.getName());
+                try {
+                    Files.copy(source, destination);
+
+                    // Безопасное обновление UI из фонового потока
+                    Platform.runLater(() -> {
+                        files.getItems().add(
+                                new SharedFileItem(destination.toFile(), ShareState.STOPPED)
+                        );
+                        statusLabel.setText("Добавлен: " + file.getName() + ". Размер - " + file.length() + " байт.");
+                    });
+
+                } catch (FileAlreadyExistsException e) {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.initOwner(stage);
+                        alert.setTitle("Ошибка копирования");
+                        alert.setHeaderText("Не удалось скопировать файл");
+                        alert.setContentText("Файл " + e.getFile() + " уже есть в папке\n" + sharedDirectory.toString());
+                        alert.showAndWait();
+                    });
+                } catch (IOException e) {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.initOwner(stage);
+                        alert.setTitle("Ошибка копирования");
+                        alert.setHeaderText("Не удалось скопировать файл");
+                        alert.setContentText("Не удалось скопировать файл " + file.getName() + ".\nПричина: " + e.getMessage());
+                        alert.showAndWait();
+                    });
+                } finally {
+                    Platform.runLater(() -> {
+                        addFileButton.setText("Добавить файл...");
+                        addFileButton.setDisable(false);
+
+                        refreshButton.setDisable(false);
+                });
+            }
+            }).start();
+        }
+    }
+
+    private void deleteSelectedFile() {
+        // getSelectionModel() - объект, который управляет выделением строк
+        // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
+        int index = files.getSelectionModel().getSelectedIndex();
+
+        if (index < 0) {
+            return;
+        }
+
+        SharedFileItem selected = files.getItems().get(index);
+        File file = selected.file();
+
+        if (file != null) {
+            Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmation.initOwner(stage);
+            confirmation.setTitle("Удаление файла");
+            confirmation.setHeaderText(
+                    "Удалить «" + file.getName() + "» из папки раздачи?"
+            );
+            confirmation.setContentText(
+                    "Файл будет удалён без перемещения в корзину."
+            );
+
+            ButtonType answer = confirmation.showAndWait()
+                    .orElse(ButtonType.CANCEL);
+
+            if (answer != ButtonType.OK) {
+                return;
+            }
+            new Thread(() -> {
+                try {
+                    Files.delete(sharedDirectory.resolve(file.getName()));
+
+                    Platform.runLater(() -> {
+                        files.getItems().removeIf(item -> item.file().equals(file));
+                    });
+                } catch (IOException e) {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.initOwner(stage);
+                        alert.setTitle("Ошибка удаления");
+                        alert.setHeaderText("Не удалось удалить файл");
+                        alert.setContentText("Файл " + file.getName() + " не удалось удалить.\n" +
+                                "Причина: " + e.getMessage());
+                        alert.showAndWait();
+                    });
+                }
+            }).start();
+        }
+        // В ДАЛЬНЕЙШЕМ ОПОВЕЩАТЬ ЯДРО ОБ УДАЛЕНИИ ФАЙЛА
+        // FLAG_CHECK_LATER
+    }
+
+    private void loadInitialFiles() {
         try {
             File[] sharedFiles = readSharedFiles(sharedDirectory);
 
@@ -82,248 +279,6 @@ public class MyFilesView {
                     + sharedDirectory.toString() + "\n\nПричина: " + e.getMessage());
             alert.showAndWait();
         }
-
-        // Inactive свойство для кнопки удаления
-        deleteButton.disableProperty().bind(files.getSelectionModel().selectedItemProperty().isNull());
-
-        // Удаление файла
-        deleteButton.setOnAction(event -> {
-            // getSelectionModel() - объект, который управляет выделением строк
-            // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
-            int index = files.getSelectionModel().getSelectedIndex();
-
-            if (index < 0) {
-                return;
-            }
-
-            SharedFileItem selected = files.getItems().get(index);
-            File file = selected.file();
-
-            if (file != null) {
-                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-                confirmation.initOwner(stage);
-                confirmation.setTitle("Удаление файла");
-                confirmation.setHeaderText(
-                        "Удалить «" + file.getName() + "» из папки раздачи?"
-                );
-                confirmation.setContentText(
-                        "Файл будет удалён без перемещения в корзину."
-                );
-
-                ButtonType answer = confirmation.showAndWait()
-                        .orElse(ButtonType.CANCEL);
-
-                if (answer != ButtonType.OK) {
-                    return;
-                }
-                new Thread(() -> {
-                    try {
-                        Files.delete(sharedDirectory.resolve(file.getName()));
-
-                        Platform.runLater(() -> {
-                            files.getItems().removeIf(item -> item.file().equals(file));
-                        });
-                    } catch (IOException e) {
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.WARNING);
-                            alert.initOwner(stage);
-                            alert.setTitle("Ошибка удаления");
-                            alert.setHeaderText("Не удалось удалить файл");
-                            alert.setContentText("Файл " + file.getName() + " не удалось удалить.\n" +
-                                    "Причина: " + e.getMessage());
-                            alert.showAndWait();
-                        });
-                    }
-                }).start();
-            }
-            // В ДАЛЬНЕЙШЕМ ОПОВЕЩАТЬ ЯДРО ОБ УДАЛЕНИИ ФАЙЛА
-            // FLAG_CHECK_LATER
-        });
-
-        // Добавление файла
-        addFileButton.setOnAction(event -> {
-            FileChooser chooser = new FileChooser();
-            chooser.setTitle("Выбери файл");
-            File file = chooser.showOpenDialog(stage);
-
-            if (file != null) {
-                addFileButton.setDisable(true);
-                addFileButton.setText("Копирование…");
-
-                refreshButton.setDisable(true);
-                new Thread(() -> {
-                    Path source = file.toPath();
-                    Path destination = sharedDirectory.resolve(file.getName());
-                    try {
-                        Files.copy(source, destination);
-
-                        // Безопасное обновление UI из фонового потока
-                        Platform.runLater(() -> {
-                            files.getItems().add(
-                                    new SharedFileItem(destination.toFile(), ShareState.STOPPED)
-                            );
-                            statusLabel.setText("Добавлен: " + file.getName() + ". Размер - " + file.length() + " байт.");
-                        });
-
-                    } catch (FileAlreadyExistsException e) {
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.WARNING);
-                            alert.initOwner(stage);
-                            alert.setTitle("Ошибка копирования");
-                            alert.setHeaderText("Не удалось скопировать файл");
-                            alert.setContentText("Файл " + e.getFile() + " уже есть в папке\n" + sharedDirectory.toString());
-                            alert.showAndWait();
-                        });
-                    } catch (IOException e) {
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.WARNING);
-                            alert.initOwner(stage);
-                            alert.setTitle("Ошибка копирования");
-                            alert.setHeaderText("Не удалось скопировать файл");
-                            alert.setContentText("Не удалось скопировать файл " + file.getName() + ".\nПричина: " + e.getMessage());
-                            alert.showAndWait();
-                        });
-                    } finally {
-                        Platform.runLater(() -> {
-                            addFileButton.setText("Добавить файл...");
-                            addFileButton.setDisable(false);
-
-                            refreshButton.setDisable(false);
-                    });
-                }
-                }).start();
-            }
-        });
-
-        // Открытие папки раздачи
-        openFolderButton.setOnAction(event -> {
-            new Thread(() -> {
-                try {
-                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                        Desktop.getDesktop().open(sharedDirectory.toFile());
-                    } else {
-                        throw new UnsupportedOperationException("Действие открытия не поддерживается системой.");
-                    }
-                } catch (Exception e) {
-                    Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.ERROR);
-                        alert.initOwner(stage);
-                        alert.setTitle("Ошибка");
-                        alert.setHeaderText("Не удалось открыть проводник");
-                        alert.setContentText(e.getMessage());
-                        alert.showAndWait();
-                    });
-                }
-            }).start();
-        });
-
-        refreshButton.setOnAction(event -> refreshFiles());
-
-        // Добавление к кнопкам SVG иконок
-        openFolderButton.setGraphic(createIcon("/icons/folder.svg"));
-        addFileButton.setGraphic(createIcon("/icons/add.svg"));
-        deleteButton.setGraphic(createIcon("/icons/delete.svg"));
-        refreshButton.setGraphic(createIcon("/icons/refresh.svg"));
-
-        // Расположение всех элементов
-        HBox selectedFileActions = new HBox(/*openFileButton, FLAG_CHECK_LATER*/replaceStatusFileUploadButton);
-
-        selectedFileActions.visibleProperty().bind(
-                files.getSelectionModel().selectedItemProperty().isNotNull()
-        );
-
-        selectedFileActions.managedProperty().bind(
-                selectedFileActions.visibleProperty()
-        );
-
-        VBox statusBar = new VBox(
-                statusLabel,
-                sizeFileLabel,
-                statusFileLabel,
-                countUploadsFileLabel,
-                selectedFileActions
-        );
-        statusBar.setMinHeight(Region.USE_PREF_SIZE);
-        files.setMinHeight(0);
-        //statusBar.setAlignment(Pos.CENTER_LEFT);
-        //statusBar.setPadding(new Insets(10));
-
-        files.getSelectionModel().selectedItemProperty()
-                .addListener((observable, oldItem, selectedItem) -> {
-                    if (selectedItem == null) {
-                        statusLabel.setText("Выберите файл в таблице");
-                        statusFileLabel.setText("");
-                        sizeFileLabel.setText("");
-                        countUploadsFileLabel.setText("");
-                        statusBar.getStyleClass().remove("card");
-                        return;
-                    }
-
-                    double sizeInMiB = selectedItem.getSize() / (1024.0 * 1024.0);
-
-                    statusLabel.setText("Выбранный файл: " + selectedItem.getName());
-                    sizeFileLabel.setText("Размер: " + String.format("%.3f", sizeInMiB) + " МиБ");
-                    statusFileLabel.setText("Состояние: " + selectedItem.state().toString());
-                    // В ДАЛЬНЕЙШЕМ ПОДКЛЮЧИТЬ ЯДРО ---
-                    countUploadsFileLabel.setText("Количество активных раздач: ---");
-                    //countUploadsFileLabel.setText(ShareSnapshot.activeUploadCount());
-                    // FLAG_CHECK_LATER ---------------
-
-                    //openFileButton.setOnAction(event -> {
-                    //
-                    //});
-                    // FLAG_CHECK_LATER
-
-                    // ЖДУ РЕАЛИЗАЦИЮ ОТ ЯДРА ----------------
-                    // КНОПКА ПОКА ОБЩАЯ ДЛЯ ВСЕХ ФАЙЛОВ -----
-                    replaceStatusFileUploadButton.setOnAction(event -> {
-                        if (replaceStatusFileUploadButton.getText().equals("Начать раздачу")) {
-                            replaceStatusFileUploadButton.setText("Остановить раздачу");
-                            replaceStatusFileUploadButton.setGraphic(
-                                    createIcon("/icons/stop-sharing.svg")
-                            );
-                        }
-                        else {
-                            replaceStatusFileUploadButton.setText("Начать раздачу");
-                            replaceStatusFileUploadButton.setGraphic(
-                                    createIcon("/icons/start-sharing.svg")
-                            );
-                        }
-                    });
-                    // FLAG_CHECK_LATER ----------------------
-
-                    if (!statusBar.getStyleClass().contains("card")) {
-                        statusBar.getStyleClass().add("card");
-                    }
-                });
-
-        HBox fileActions = new HBox(
-                openFolderButton,
-                addFileButton,
-                deleteButton,
-                refreshButton
-        );
-        VBox myFilesView = new VBox(
-                myFilesLabel,
-                myFolderLabel,
-                fileActions,
-                files,
-                new Separator(),
-                statusBar
-        );
-
-        myFilesView.getStyleClass().add("my-files-view");
-        fileActions.getStyleClass().add("file-actions");
-        myFilesLabel.getStyleClass().add("screen-title");
-        myFolderLabel.getStyleClass().add("folder-path");
-        selectedFileActions.getStyleClass().add("file-actions");
-        statusBar.getStyleClass().add("status-bar");
-
-        // Если в вертикальном контейнере появится дополнительное место, отдаем его списку files
-        VBox.setVgrow(files, Priority.ALWAYS);
-        myFilesView.setAlignment(Pos.TOP_LEFT);
-
-        return myFilesView;
     }
 
     public void refreshFiles() {
@@ -425,9 +380,9 @@ public class MyFilesView {
             }
         });
 
-        nameColumn.setPrefWidth(450);
-        sizeColumn.setPrefWidth(150);
-        statusColumn.setPrefWidth(200);
+        nameColumn.setPrefWidth(NAME_COLUMN_WIDTH);
+        sizeColumn.setPrefWidth(SIZE_COLUMN_WIDTH);
+        statusColumn.setPrefWidth(STATUS_COLUMN_WIDTH);
 
         files.getColumns().add(nameColumn);
         files.getColumns().add(sizeColumn);
@@ -456,5 +411,81 @@ public class MyFilesView {
                 createIcon("/icons/start-sharing.svg")
         );
         // FLAG_CHECK_LATER ---------------------------------------------------------
+
+        // Расположение всех элементов
+        HBox selectedFileActions = new HBox(/*openFileButton, FLAG_CHECK_LATER*/replaceStatusFileUploadButton);
+
+        selectedFileActions.visibleProperty().bind(
+                files.getSelectionModel().selectedItemProperty().isNotNull()
+        );
+
+        selectedFileActions.managedProperty().bind(
+                selectedFileActions.visibleProperty()
+        );
+
+        statusBar.getChildren().setAll(
+                statusLabel,
+                sizeFileLabel,
+                statusFileLabel,
+                countUploadsFileLabel,
+                selectedFileActions
+        );
+        statusBar.setMinHeight(Region.USE_PREF_SIZE);
+
+        selectedFileActions.getStyleClass().add("file-actions");
+        statusBar.getStyleClass().add("status-bar");
+    }
+
+    private void configureActions() {
+        deleteButton.disableProperty().bind(
+                files.getSelectionModel().selectedItemProperty().isNull()
+        );
+
+        deleteButton.setOnAction(event -> deleteSelectedFile());
+        addFileButton.setOnAction(event -> chooseAndCopyFile());
+        openFolderButton.setOnAction(event -> openSharedFolder());
+        refreshButton.setOnAction(event -> refreshFiles());
+
+        openFolderButton.setGraphic(createIcon("/icons/folder.svg"));
+        addFileButton.setGraphic(createIcon("/icons/add.svg"));
+        deleteButton.setGraphic(createIcon("/icons/delete.svg"));
+        refreshButton.setGraphic(createIcon("/icons/refresh.svg"));
+    }
+
+    private Parent createLayout() {
+        // Объекты окна
+        Label myFilesLabel = new Label("Мои файлы");
+        Label myFolderLabel = new Label("Папка: " + sharedDirectory);
+
+        HBox fileActions = new HBox(
+                openFolderButton,
+                addFileButton,
+                deleteButton,
+                refreshButton
+        );
+        VBox myFilesView = new VBox(
+                myFilesLabel,
+                myFolderLabel,
+                fileActions,
+                files,
+                new Separator(),
+                statusBar
+        );
+
+        myFilesView.getStyleClass().add("my-files-view");
+        fileActions.getStyleClass().add("file-actions");
+        myFilesLabel.getStyleClass().add("screen-title");
+        myFolderLabel.getStyleClass().add("folder-path");
+
+
+        files.setMinHeight(0);
+        //statusBar.setAlignment(Pos.CENTER_LEFT);
+        //statusBar.setPadding(new Insets(10));
+
+        // Если в вертикальном контейнере появится дополнительное место, отдаем его списку files
+        VBox.setVgrow(files, Priority.ALWAYS);
+        myFilesView.setAlignment(Pos.TOP_LEFT);
+
+        return myFilesView;
     }
 }
