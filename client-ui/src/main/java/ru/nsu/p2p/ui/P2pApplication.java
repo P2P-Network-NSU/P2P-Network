@@ -23,7 +23,8 @@ import java.nio.file.FileAlreadyExistsException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static ru.nsu.p2p.ui.files.SharedFilesService.createSharedDirectory;
+import ru.nsu.p2p.ui.files.SharedFilesService;
+
 import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
 import javafx.scene.Parent;
@@ -104,11 +105,18 @@ public final class P2pApplication extends Application {
             System.out.println("Шрифт загружен: " + loadedFont.getFamily());
         }
 
-        Path sharedDirectory;
+        Path sharedDirectory = Path.of(
+                System.getProperty("user.home"),
+                ".p2p-client-NSU",
+                "shared"
+        );
+
+        SharedFilesService sharedFilesService =
+                new SharedFilesService(sharedDirectory);
 
         // Открываем/создаем папку раздачи
         try {
-            sharedDirectory = createSharedDirectory();
+            sharedFilesService.createSharedDirectory();
         } catch (FileAlreadyExistsException e) {
             // Ошибка создания/открытия - есть файл shared
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -147,7 +155,9 @@ public final class P2pApplication extends Application {
         Parent downloadsView = new DownloadsView().getView();
 
         // Окно с файлами пользователя
-        MyFilesView myFilesScreen = new MyFilesView(stage, sharedDirectory);
+        MyFilesView myFilesScreen =
+                new MyFilesView(stage, sharedFilesService);
+
         Parent myFilesView = myFilesScreen.getView();
 
         // Окно со стримом
