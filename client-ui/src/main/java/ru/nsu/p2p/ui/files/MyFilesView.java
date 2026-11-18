@@ -1,9 +1,8 @@
 package ru.nsu.p2p.ui.files;
 
 import javafx.application.Platform;
-import javafx.beans.property.ReadOnlyLongWrapper;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.*;
+import javafx.concurrent.Task;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -26,6 +25,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 
 import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
@@ -61,10 +64,15 @@ public class MyFilesView {
 
     private final VBox statusBar = new VBox();
 
-    public MyFilesView(Stage stage, SharedFilesService sharedFilesService) {
+    private final Executor fileExecutor;
+    private final BooleanProperty fileOperationRunning =
+            new SimpleBooleanProperty(false);
+
+    public MyFilesView(Stage stage, SharedFilesService sharedFilesService, Executor fileExecutor) {
         this.stage = stage;
         this.sharedFilesService = sharedFilesService;
         this.sharedDirectory = sharedFilesService.getDirectory();
+        this.fileExecutor = fileExecutor;
         this.root = createView();
     }
 
@@ -137,24 +145,18 @@ public class MyFilesView {
     }
 
     private void openSharedFolder() {
-        new Thread(() -> {
-            try {
-                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+        runFileTask("Не удалось открыть проводник",
+                () -> {
+                    if (!Desktop.isDesktopSupported()
+                            || !Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                        throw new UnsupportedOperationException(
+                                "Открытие папки не поддерживается системой."
+                        );
+                    }
                     Desktop.getDesktop().open(sharedDirectory.toFile());
-                } else {
-                    throw new UnsupportedOperationException("Действие открытия не поддерживается системой.");
-                }
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.initOwner(stage);
-                    alert.setTitle("Ошибка");
-                    alert.setHeaderText("Не удалось открыть проводник");
-                    alert.setContentText(e.getMessage());
-                    alert.showAndWait();
-                });
-            }
-        }).start();
+                    return null;
+                },
+                ignored -> {});
     }
 
     private void chooseAndCopyFile() {
@@ -162,54 +164,23 @@ public class MyFilesView {
         chooser.setTitle("Выбери файл");
         File file = chooser.showOpenDialog(stage);
 
-        if (file != null) {
-            addFileButton.setDisable(true);
-            addFileButton.setText("Копирование…");
-
-            refreshButton.setDisable(true);
-            new Thread(() -> {
-                Path source = file.toPath();
-                Path destination = sharedDirectory.resolve(file.getName());
-                try {
-                    SharedFileItem copied = sharedFilesService.copyFile(file.toPath());
-
-                    Platform.runLater(() -> {
-                        files.getItems().add(copied);
-
-                        statusLabel.setText(
-                                "Добавлен: " + copied.getName()
-                                        + ". Размер - " + copied.getSize() + " байт."
-                        );
-                    });
-
-                } catch (FileAlreadyExistsException e) {
-                    Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.initOwner(stage);
-                        alert.setTitle("Ошибка копирования");
-                        alert.setHeaderText("Не удалось скопировать файл");
-                        alert.setContentText("Файл " + e.getFile() + " уже есть в папке\n" + sharedDirectory.toString());
-                        alert.showAndWait();
-                    });
-                } catch (IOException e) {
-                    Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.initOwner(stage);
-                        alert.setTitle("Ошибка копирования");
-                        alert.setHeaderText("Не удалось скопировать файл");
-                        alert.setContentText("Не удалось скопировать файл " + file.getName() + ".\nПричина: " + e.getMessage());
-                        alert.showAndWait();
-                    });
-                } finally {
-                    Platform.runLater(() -> {
-                        addFileButton.setText("Добавить файл...");
-                        addFileButton.setDisable(false);
-
-                        refreshButton.setDisable(false);
-                });
-            }
-            }).start();
+        if (file == null) {
+            return;
         }
+
+        addFileButton.setText("Копирование…");
+
+        runFileTask("Не удалось скопировать файл",
+                () -> sharedFilesService.copyFile(file.toPath()),
+                copied -> {
+                    files.getItems().add(copied);
+                    files.getSelectionModel().clearSelection();
+
+                    statusLabel.setText(
+                            "Добавлен: " + copied.getName()
+                                    + ". Размер - " + copied.getSize() + " байт."
+                    );
+                });
     }
 
     private void deleteSelectedFile() {
@@ -241,25 +212,12 @@ public class MyFilesView {
             if (answer != ButtonType.OK) {
                 return;
             }
-            new Thread(() -> {
-                try {
-                    sharedFilesService.deleteFile(file.getName());
-
-                    Platform.runLater(() -> {
-                        files.getItems().removeIf(item -> item.file().equals(file));
-                    });
-                } catch (IOException e) {
-                    Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.initOwner(stage);
-                        alert.setTitle("Ошибка удаления");
-                        alert.setHeaderText("Не удалось удалить файл");
-                        alert.setContentText("Файл " + file.getName() + " не удалось удалить.\n" +
-                                "Причина: " + e.getMessage());
-                        alert.showAndWait();
-                    });
-                }
-            }).start();
+            runFileTask("Не удалось удалить файл",
+                    () -> {
+                        sharedFilesService.deleteFile(file.getName());
+                        return null;
+                    },
+                    ignored -> files.getItems().removeIf(item -> item.file().equals(file)));
         }
         // В ДАЛЬНЕЙШЕМ ОПОВЕЩАТЬ ЯДРО ОБ УДАЛЕНИИ ФАЙЛА
         // FLAG_CHECK_LATER
@@ -284,30 +242,22 @@ public class MyFilesView {
     }
 
     public void refreshFiles() {
-        try {
-            File[] updatedFiles = sharedFilesService.readSharedFiles();
+        loadFiles(true);
+    }
 
-            files.getItems().clear();
+    private void loadFiles(boolean showCount) {
+        runFileTask("Не удалось прочитать папку раздач",
+                sharedFilesService::listFileItems,
+                items -> {
+                    files.getItems().setAll(items);
+                    files.getSelectionModel().clearSelection();
 
-            for (File file : updatedFiles) {
-                files.getItems().add(
-                        sharedFilesService.readFileItem(file)
-                );
-            }
-
-            statusLabel.setText(
-                    "Список файлов обновлен (" + files.getItems().size() + ")"
-            );
-        } catch (IOException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.initOwner(stage);
-            alert.setTitle("Ошибка обновления");
-            alert.setHeaderText("Не удалось обновить список файлов");
-            alert.setContentText(
-                    "Проверьте доступность папки:\n" + e.getMessage()
-            );
-            alert.showAndWait();
-        }
+                    if (showCount) {
+                        statusLabel.setText(
+                                "Список файлов обновлён (" + items.size() + ")"
+                        );
+                    }
+                });
     }
 
     private void configureTable() {
@@ -440,7 +390,11 @@ public class MyFilesView {
     private void configureActions() {
         deleteButton.disableProperty().bind(
                 files.getSelectionModel().selectedItemProperty().isNull()
+                        .or(fileOperationRunning)
         );
+        refreshButton.disableProperty().bind(fileOperationRunning);
+        addFileButton.disableProperty().bind(fileOperationRunning);
+        openFolderButton.disableProperty().bind(fileOperationRunning);
 
         deleteButton.setOnAction(event -> deleteSelectedFile());
         addFileButton.setOnAction(event -> chooseAndCopyFile());
@@ -488,5 +442,54 @@ public class MyFilesView {
         myFilesView.setAlignment(Pos.TOP_LEFT);
 
         return myFilesView;
+    }
+
+    public boolean isFileOperationRunning() {
+        return fileOperationRunning.get();
+    }
+
+    private <T> void runFileTask(
+            String errorTitle, Callable<T> operation, Consumer<T> onSuccess
+    ) {
+        if (isFileOperationRunning()) {
+            return;
+        }
+
+        Task<T> task = new Task<>() {
+            @Override
+            protected T call() throws Exception {
+                return operation.call();
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            try {
+                onSuccess.accept(task.getValue());
+            } finally {
+                finishFileTask();
+            }
+        });
+
+        task.setOnFailed(event -> {
+            finishFileTask();
+            Throwable error = task.getException();
+            String message = error instanceof FileAlreadyExistsException exists
+                    ? "Файл уже есть в папке: " + exists.getFile()
+                    : error.getMessage();
+
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.initOwner(stage);
+            alert.setHeaderText(errorTitle);
+            alert.setContentText(message);
+            alert.show();
+        });
+
+        fileOperationRunning.set(true);
+        fileExecutor.execute(task);
+    }
+
+    private void finishFileTask() {
+        addFileButton.setText("Добавить файл...");
+        fileOperationRunning.set(false);
     }
 }

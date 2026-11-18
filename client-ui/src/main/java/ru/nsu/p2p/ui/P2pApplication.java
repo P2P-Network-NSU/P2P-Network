@@ -24,6 +24,8 @@ import java.nio.file.FileAlreadyExistsException;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import ru.nsu.p2p.ui.files.SharedFilesService;
 
@@ -105,7 +107,19 @@ public final class P2pApplication extends Application {
 
         // Окно с файлами пользователя
         MyFilesView myFilesScreen =
-                new MyFilesView(stage, sharedFilesService);
+                new MyFilesView(stage, sharedFilesService, fileExecutor);
+
+        stage.setOnCloseRequest(event -> {
+            if (myFilesScreen.isFileOperationRunning()) {
+                event.consume();
+                Alert alert = new Alert(
+                        Alert.AlertType.INFORMATION,
+                        "Дождитесь завершения файловой операции."
+                );
+                alert.initOwner(stage);
+                alert.show();
+            }
+        });
 
         Parent myFilesView = myFilesScreen.getView();
 
@@ -319,5 +333,13 @@ public final class P2pApplication extends Application {
         updateTransferSpeeds(1_234_567, 67);
 
         return statusBar;
+    }
+
+    private final ExecutorService fileExecutor =
+            Executors.newSingleThreadExecutor();
+
+    @Override
+    public void stop() {
+        fileExecutor.shutdown();
     }
 }

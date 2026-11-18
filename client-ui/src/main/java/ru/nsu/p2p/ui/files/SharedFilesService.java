@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
 import ru.nsu.p2p.common.transfer.ShareState;
 
 public final class SharedFilesService {
@@ -49,5 +52,13 @@ public final class SharedFilesService {
 
     void deleteFile(String fileName) throws IOException {
         Files.delete(sharedDirectory.resolve(fileName));
+    }
+
+    List<SharedFileItem> listFileItems() throws IOException {
+        List<SharedFileItem> items = new ArrayList<>();
+        for (File file : readSharedFiles()) {
+            items.add(readFileItem(file));
+        }
+        return items;
     }
 }
