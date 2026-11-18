@@ -13,6 +13,8 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
+import java.io.InputStream;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import javafx.scene.control.Alert;
@@ -32,6 +34,7 @@ import javafx.scene.Parent;
 import ru.nsu.p2p.ui.files.MyFilesView;
 import ru.nsu.p2p.ui.catalog.CatalogView;
 import ru.nsu.p2p.ui.downloads.DownloadsView;
+import ru.nsu.p2p.ui.format.DataSizeFormatters;
 import ru.nsu.p2p.ui.settings.SettingsView;
 import ru.nsu.p2p.ui.stream.StreamView;
 
@@ -53,6 +56,8 @@ public final class P2pApplication extends Application {
     private static final double DEFAULT_WINDOW_HEIGHT = 720;
 
     private static final double SIDEBAR_SPACING = 10;
+
+    private static final double FONT_LOAD_SIZE = 14;
 
     public static void launchUi(String[] args) {
         Application.launch(P2pApplication.class, args);
@@ -82,28 +87,8 @@ public final class P2pApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         System.setProperty("prism.lcdtext", "false");
-        // Шрифт
-        Font loadedFont = Font.loadFont(
-                getClass().getResourceAsStream("/fonts/Nunito-Regular.ttf"),
-                14
-        );
-
-        if (loadedFont == null) {
-            System.err.println("Не удалось загрузить шрифт!");
-        } else {
-            System.out.println("Шрифт загружен: " + loadedFont.getFamily());
-        }
-
-        loadedFont = Font.loadFont(
-                getClass().getResourceAsStream("/fonts/Nunito-Bold.ttf"),
-                14
-        );
-
-        if (loadedFont == null) {
-            System.err.println("Не удалось загрузить шрифт!");
-        } else {
-            System.out.println("Шрифт загружен: " + loadedFont.getFamily());
-        }
+        loadFont("/fonts/Nunito-Regular.ttf");
+        loadFont("/fonts/Nunito-Bold.ttf");
 
         Path sharedDirectory = Path.of(
                 System.getProperty("user.home"),
@@ -321,23 +306,8 @@ public final class P2pApplication extends Application {
     }
 
     private void updateTransferSpeeds(long downloadBps, long uploadBps) {
-        downloadSpeedLabel.setText("↓ " + formatSpeed(downloadBps));
-        uploadSpeedLabel.setText("↑ " + formatSpeed(uploadBps));
-    }
-
-    private String formatSpeed(long bytesPerSecond) {
-        if (bytesPerSecond < 1024) {
-            return bytesPerSecond + " Б/с";
-        }
-
-        if (bytesPerSecond < 1024 * 1024) {
-            return String.format("%.1f КиБ/с", bytesPerSecond / 1024.0);
-        }
-
-        return String.format(
-                "%.1f МиБ/с",
-                bytesPerSecond / (1024.0 * 1024)
-        );
+        downloadSpeedLabel.setText("↓ " + DataSizeFormatters.formatSpeed(downloadBps));
+        uploadSpeedLabel.setText("↑ " + DataSizeFormatters.formatSpeed(uploadBps));
     }
 
     private static void setActiveButton(Button activeButton, Button... allButtons) {
@@ -345,5 +315,16 @@ public final class P2pApplication extends Application {
             button.getStyleClass().remove("active");
         }
         activeButton.getStyleClass().add("active");
+    }
+
+    private static void loadFont(String resourcePath) {
+        try (InputStream stream =
+                     P2pApplication.class.getResourceAsStream(resourcePath)) {
+            if (stream == null || Font.loadFont(stream, FONT_LOAD_SIZE) == null) {
+                System.err.println("Не удалось загрузить шрифт: " + resourcePath);
+            }
+        } catch (IOException e) {
+            System.err.println("Ошибка загрузки шрифта " + resourcePath + ": " + e.getMessage());
+        }
     }
 }

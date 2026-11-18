@@ -29,6 +29,8 @@ import java.nio.file.Path;
 
 import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
+import ru.nsu.p2p.ui.format.DataSizeFormatters;
+
 import javafx.scene.Parent;
 
 public class MyFilesView {
@@ -96,10 +98,8 @@ public class MyFilesView {
             return;
         }
 
-        double sizeInMiB = selectedItem.getSize() / (1024.0 * 1024.0);
-
         statusLabel.setText("Выбранный файл: " + selectedItem.getName());
-        sizeFileLabel.setText("Размер: " + String.format("%.3f", sizeInMiB) + " МиБ");
+        sizeFileLabel.setText("Размер: " + DataSizeFormatters.formatMiBValue(selectedItem.getSize()) + " МиБ");
         statusFileLabel.setText("Состояние: " + selectedItem.state().toString());
         // В ДАЛЬНЕЙШЕМ ПОДКЛЮЧИТЬ ЯДРО ---
         countUploadsFileLabel.setText("Количество активных раздач: ---");
@@ -344,8 +344,7 @@ public class MyFilesView {
                     setText(null);
                     setStyle("");
                 } else {
-                    double sizeInMiB = bytes.doubleValue() / (1024.0 * 1024.0);
-                    setText(String.format("%.3f", sizeInMiB));
+                    setText(DataSizeFormatters.formatMiBValue(bytes.longValue()));
                     setStyle("-fx-alignment: center-right;");
                 }
             }
