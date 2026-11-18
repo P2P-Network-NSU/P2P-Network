@@ -71,6 +71,9 @@ public final class P2pApplication extends Application {
     private Label downloadSpeedLabel;
     private Label uploadSpeedLabel;
 
+    private final ExecutorService fileExecutor =
+            Executors.newSingleThreadExecutor();
+
     // КОД ДЛЯ ТЕСТА -----
     private static CompletionStage<ClientStatusSnapshot> getTestStatus() {
         return CompletableFuture.completedFuture(
@@ -164,6 +167,11 @@ public final class P2pApplication extends Application {
 
         // Показ окна
         stage.show();
+    }
+
+    @Override
+    public void stop() {
+        fileExecutor.shutdown();
     }
 
     private static SharedFilesService prepareSharedFiles(Stage stage) {
@@ -333,13 +341,5 @@ public final class P2pApplication extends Application {
         updateTransferSpeeds(1_234_567, 67);
 
         return statusBar;
-    }
-
-    private final ExecutorService fileExecutor =
-            Executors.newSingleThreadExecutor();
-
-    @Override
-    public void stop() {
-        fileExecutor.shutdown();
     }
 }

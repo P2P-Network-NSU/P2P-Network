@@ -2,7 +2,9 @@ package ru.nsu.p2p.ui.files;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +46,10 @@ public final class SharedFilesService {
 
     SharedFileItem copyFile(Path source) throws IOException {
         Path destination = sharedDirectory.resolve(source.getFileName());
+
+        if (Files.exists(destination, LinkOption.NOFOLLOW_LINKS)) {
+            throw new FileAlreadyExistsException(destination.toString());
+        }
 
         Files.copy(source, destination);
 

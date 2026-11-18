@@ -80,6 +80,14 @@ public class MyFilesView {
         return root;
     }
 
+    public void refreshFiles() {
+        loadFiles(true);
+    }
+
+    public boolean isFileOperationRunning() {
+        return fileOperationRunning.get();
+    }
+
     private Parent createView() {
         configureTable();
         configureFileDetails();
@@ -91,173 +99,9 @@ public class MyFilesView {
                         showFileDetails(selectedItem)
                 );
 
-        loadInitialFiles();
+        loadFiles(false);
 
         return createLayout();
-    }
-
-    private void showFileDetails(SharedFileItem selectedItem) {
-        if (selectedItem == null) {
-            statusLabel.setText("Выберите файл в таблице");
-            statusFileLabel.setText("");
-            sizeFileLabel.setText("");
-            countUploadsFileLabel.setText("");
-            statusBar.getStyleClass().remove("card");
-            return;
-        }
-
-        statusLabel.setText("Выбранный файл: " + selectedItem.getName());
-        sizeFileLabel.setText("Размер: " + DataSizeFormatters.formatMiBValue(selectedItem.getSize()) + " МиБ");
-        statusFileLabel.setText("Состояние: " + selectedItem.state().toString());
-        // В ДАЛЬНЕЙШЕМ ПОДКЛЮЧИТЬ ЯДРО ---
-        countUploadsFileLabel.setText("Количество активных раздач: ---");
-        //countUploadsFileLabel.setText(ShareSnapshot.activeUploadCount());
-        // FLAG_CHECK_LATER ---------------
-
-        //openFileButton.setOnAction(event -> {
-        //
-        //});
-        // FLAG_CHECK_LATER
-
-        if (!statusBar.getStyleClass().contains("card")) {
-            statusBar.getStyleClass().add("card");
-        }
-    }
-
-    private void configureSharingPlaceholder() {
-        // ЖДУ РЕАЛИЗАЦИЮ ОТ ЯДРА ----------------
-        // КНОПКА ПОКА ОБЩАЯ ДЛЯ ВСЕХ ФАЙЛОВ -----
-        replaceStatusFileUploadButton.setOnAction(event -> {
-            if (replaceStatusFileUploadButton.getText().equals("Начать раздачу")) {
-                replaceStatusFileUploadButton.setText("Остановить раздачу");
-                replaceStatusFileUploadButton.setGraphic(
-                        createIcon("/icons/stop-sharing.svg")
-                );
-            }
-            else {
-                replaceStatusFileUploadButton.setText("Начать раздачу");
-                replaceStatusFileUploadButton.setGraphic(
-                        createIcon("/icons/start-sharing.svg")
-                );
-            }
-        });
-        // FLAG_CHECK_LATER ----------------------
-    }
-
-    private void openSharedFolder() {
-        runFileTask("Не удалось открыть проводник",
-                () -> {
-                    if (!Desktop.isDesktopSupported()
-                            || !Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                        throw new UnsupportedOperationException(
-                                "Открытие папки не поддерживается системой."
-                        );
-                    }
-                    Desktop.getDesktop().open(sharedDirectory.toFile());
-                    return null;
-                },
-                ignored -> {});
-    }
-
-    private void chooseAndCopyFile() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Выбери файл");
-        File file = chooser.showOpenDialog(stage);
-
-        if (file == null) {
-            return;
-        }
-
-        addFileButton.setText("Копирование…");
-
-        runFileTask("Не удалось скопировать файл",
-                () -> sharedFilesService.copyFile(file.toPath()),
-                copied -> {
-                    files.getItems().add(copied);
-                    files.getSelectionModel().clearSelection();
-
-                    statusLabel.setText(
-                            "Добавлен: " + copied.getName()
-                                    + ". Размер - " + copied.getSize() + " байт."
-                    );
-                });
-    }
-
-    private void deleteSelectedFile() {
-        // getSelectionModel() - объект, который управляет выделением строк
-        // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
-        int index = files.getSelectionModel().getSelectedIndex();
-
-        if (index < 0) {
-            return;
-        }
-
-        SharedFileItem selected = files.getItems().get(index);
-        File file = selected.file();
-
-        if (file != null) {
-            Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-            confirmation.initOwner(stage);
-            confirmation.setTitle("Удаление файла");
-            confirmation.setHeaderText(
-                    "Удалить «" + file.getName() + "» из папки раздачи?"
-            );
-            confirmation.setContentText(
-                    "Файл будет удалён без перемещения в корзину."
-            );
-
-            ButtonType answer = confirmation.showAndWait()
-                    .orElse(ButtonType.CANCEL);
-
-            if (answer != ButtonType.OK) {
-                return;
-            }
-            runFileTask("Не удалось удалить файл",
-                    () -> {
-                        sharedFilesService.deleteFile(file.getName());
-                        return null;
-                    },
-                    ignored -> files.getItems().removeIf(item -> item.file().equals(file)));
-        }
-        // В ДАЛЬНЕЙШЕМ ОПОВЕЩАТЬ ЯДРО ОБ УДАЛЕНИИ ФАЙЛА
-        // FLAG_CHECK_LATER
-    }
-
-    private void loadInitialFiles() {
-        try {
-            File[] sharedFiles = sharedFilesService.readSharedFiles();
-
-            for (File file : sharedFiles) {
-                files.getItems().add(sharedFilesService.readFileItem(file));
-            }
-        } catch (IOException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.initOwner(stage);
-            alert.setTitle("Ошибка инициализации");
-            alert.setHeaderText("Не удалось прочитать общую папку");
-            alert.setContentText("Произошла ошибка при первоначальном чтении содержимого папки:\n"
-                    + sharedDirectory.toString() + "\n\nПричина: " + e.getMessage());
-            alert.showAndWait();
-        }
-    }
-
-    public void refreshFiles() {
-        loadFiles(true);
-    }
-
-    private void loadFiles(boolean showCount) {
-        runFileTask("Не удалось прочитать папку раздач",
-                sharedFilesService::listFileItems,
-                items -> {
-                    files.getItems().setAll(items);
-                    files.getSelectionModel().clearSelection();
-
-                    if (showCount) {
-                        statusLabel.setText(
-                                "Список файлов обновлён (" + items.size() + ")"
-                        );
-                    }
-                });
     }
 
     private void configureTable() {
@@ -407,6 +251,41 @@ public class MyFilesView {
         refreshButton.setGraphic(createIcon("/icons/refresh.svg"));
     }
 
+    private void configureSharingPlaceholder() {
+        // ЖДУ РЕАЛИЗАЦИЮ ОТ ЯДРА ----------------
+        // КНОПКА ПОКА ОБЩАЯ ДЛЯ ВСЕХ ФАЙЛОВ -----
+        replaceStatusFileUploadButton.setOnAction(event -> {
+            if (replaceStatusFileUploadButton.getText().equals("Начать раздачу")) {
+                replaceStatusFileUploadButton.setText("Остановить раздачу");
+                replaceStatusFileUploadButton.setGraphic(
+                        createIcon("/icons/stop-sharing.svg")
+                );
+            }
+            else {
+                replaceStatusFileUploadButton.setText("Начать раздачу");
+                replaceStatusFileUploadButton.setGraphic(
+                        createIcon("/icons/start-sharing.svg")
+                );
+            }
+        });
+        // FLAG_CHECK_LATER ----------------------
+    }
+
+    private void loadFiles(boolean showCount) {
+        runFileTask("Не удалось прочитать папку раздач",
+                sharedFilesService::listFileItems,
+                items -> {
+                    files.getItems().setAll(items);
+                    files.getSelectionModel().clearSelection();
+
+                    if (showCount) {
+                        statusLabel.setText(
+                                "Список файлов обновлён (" + items.size() + ")"
+                        );
+                    }
+                });
+    }
+
     private Parent createLayout() {
         // Объекты окна
         Label myFilesLabel = new Label("Мои файлы");
@@ -444,8 +323,111 @@ public class MyFilesView {
         return myFilesView;
     }
 
-    public boolean isFileOperationRunning() {
-        return fileOperationRunning.get();
+    private void openSharedFolder() {
+        runFileTask("Не удалось открыть проводник",
+                () -> {
+                    if (!Desktop.isDesktopSupported()
+                            || !Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                        throw new UnsupportedOperationException(
+                                "Открытие папки не поддерживается системой."
+                        );
+                    }
+                    Desktop.getDesktop().open(sharedDirectory.toFile());
+                    return null;
+                },
+                ignored -> {});
+    }
+
+    private void chooseAndCopyFile() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Выбери файл");
+        File file = chooser.showOpenDialog(stage);
+
+        if (file == null) {
+            return;
+        }
+
+        addFileButton.setText("Копирование…");
+
+        runFileTask("Не удалось скопировать файл",
+                () -> sharedFilesService.copyFile(file.toPath()),
+                copied -> {
+                    files.getItems().add(copied);
+                    files.getSelectionModel().clearSelection();
+
+                    statusLabel.setText(
+                            "Добавлен: " + copied.getName()
+                                    + ". Размер - " + copied.getSize() + " байт."
+                    );
+                });
+    }
+
+    private void deleteSelectedFile() {
+        // getSelectionModel() - объект, который управляет выделением строк
+        // getSelectedIndex() - номер выбранной строки. Нумерация с 0. Если нет выбора - -1
+        int index = files.getSelectionModel().getSelectedIndex();
+
+        if (index < 0) {
+            return;
+        }
+
+        SharedFileItem selected = files.getItems().get(index);
+        File file = selected.file();
+
+        if (file != null) {
+            Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmation.initOwner(stage);
+            confirmation.setTitle("Удаление файла");
+            confirmation.setHeaderText(
+                    "Удалить «" + file.getName() + "» из папки раздачи?"
+            );
+            confirmation.setContentText(
+                    "Файл будет удалён без перемещения в корзину."
+            );
+
+            ButtonType answer = confirmation.showAndWait()
+                    .orElse(ButtonType.CANCEL);
+
+            if (answer != ButtonType.OK) {
+                return;
+            }
+            runFileTask("Не удалось удалить файл",
+                    () -> {
+                        sharedFilesService.deleteFile(file.getName());
+                        return null;
+                    },
+                    ignored -> files.getItems().removeIf(item -> item.file().equals(file)));
+        }
+        // В ДАЛЬНЕЙШЕМ ОПОВЕЩАТЬ ЯДРО ОБ УДАЛЕНИИ ФАЙЛА
+        // FLAG_CHECK_LATER
+    }
+
+    private void showFileDetails(SharedFileItem selectedItem) {
+        if (selectedItem == null) {
+            statusLabel.setText("Выберите файл в таблице");
+            statusFileLabel.setText("");
+            sizeFileLabel.setText("");
+            countUploadsFileLabel.setText("");
+            statusBar.getStyleClass().remove("card");
+            return;
+        }
+
+        statusLabel.setText("Выбранный файл: " + selectedItem.getName());
+        sizeFileLabel.setText("Размер: " + DataSizeFormatters.formatMiBValue(selectedItem.getSize()) + " МиБ");
+        statusFileLabel.setText("Состояние: " + selectedItem.state().toString());
+        // В ДАЛЬНЕЙШЕМ ПОДКЛЮЧИТЬ ЯДРО ---
+        countUploadsFileLabel.setText("Количество активных раздач: ---");
+        //countUploadsFileLabel.setText(ShareSnapshot.activeUploadCount());
+        // FLAG_CHECK_LATER ---------------
+
+        //openFileButton.setOnAction(event -> {
+        //
+        //});
+        // FLAG_CHECK_LATER
+
+        if (!statusBar.getStyleClass().contains("card")) {
+            statusBar.getStyleClass().add("card");
+        }
     }
 
     private <T> void runFileTask(
