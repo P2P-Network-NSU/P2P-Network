@@ -170,6 +170,22 @@
     -fx-border-color: #EBECF0;
 }
 
+.tracker-dot {
+    -fx-fill: gray;
+}
+
+.tracker-dot.tracker-dot-connecting {
+    -fx-fill: orange;
+}
+
+.tracker-dot.tracker-dot-online {
+    -fx-fill: limegreen;
+}
+
+.tracker-dot.tracker-dot-offline {
+    -fx-fill: red;
+}
+
 .status-label {
     -fx-font-size: 25px;
     -fx-font-weight: bold;

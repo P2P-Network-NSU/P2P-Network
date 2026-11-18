@@ -8,7 +8,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -22,6 +21,7 @@ import ru.nsu.p2p.common.client.ClientStatusSnapshot;
 import ru.nsu.p2p.common.client.ConnectionState;
 
 import java.nio.file.FileAlreadyExistsException;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -58,6 +58,7 @@ public final class P2pApplication extends Application {
     private static final double SIDEBAR_SPACING = 10;
 
     private static final double FONT_LOAD_SIZE = 14;
+    private static final double TRACKER_DOT_RADIUS = 5;
 
     public static void launchUi(String[] args) {
         Application.launch(P2pApplication.class, args);
@@ -75,8 +76,8 @@ public final class P2pApplication extends Application {
                         0,
                         //ConnectionState.STOPPED,
                         //ConnectionState.CONNECTING,
-                        //ConnectionState.ONLINE,
-                        ConnectionState.OFFLINE,
+                        ConnectionState.ONLINE,
+                        //ConnectionState.OFFLINE,
                         false,
                         null
                 )
@@ -85,50 +86,13 @@ public final class P2pApplication extends Application {
     // FLAG_CHECK_LATER ---
 
     @Override
-    public void start(Stage stage) throws IOException {
+    public void start(Stage stage) {
         System.setProperty("prism.lcdtext", "false");
         loadFont("/fonts/Nunito-Regular.ttf");
         loadFont("/fonts/Nunito-Bold.ttf");
 
-        Path sharedDirectory = Path.of(
-                System.getProperty("user.home"),
-                ".p2p-client-NSU",
-                "shared"
-        );
-
-        SharedFilesService sharedFilesService =
-                new SharedFilesService(sharedDirectory);
-
-        // Открываем/создаем папку раздачи
-        try {
-            sharedFilesService.createSharedDirectory();
-        } catch (FileAlreadyExistsException e) {
-            // Ошибка создания/открытия - есть файл shared
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-
-            alert.initOwner(stage);
-            alert.setTitle("Ошибка запуска");
-            alert.setHeaderText("Не удалось создать папку раздач");
-            alert.setContentText(
-                    "Путь уже занят: " + e.getFile()
-                            + "\nПереименуйте или переместите мешающий файл "
-                            + "и запустите приложение снова."
-            );
-
-            alert.showAndWait();
-            return;
-        } catch (IOException e) {
-            // Общая ошибка создания/открытия
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-
-            alert.initOwner(stage);
-            alert.setTitle("Ошибка запуска");
-            alert.setHeaderText("Не удалось создать папку раздач");
-            alert.setContentText("Проверьте путь и права доступа для папки:\n" + e.getMessage());
-
-            alert.showAndWait();
-            return;
-        }
+        SharedFilesService sharedFilesService = prepareSharedFiles(stage);
+        if (sharedFilesService == null) return;
 
         // Главное окно
         BorderPane root = new BorderPane();
@@ -163,34 +127,10 @@ public final class P2pApplication extends Application {
 
         leftMenuWithButtons.getStyleClass().add("left-menu");
 
-        // Нижняя полоска со статусом подключения и скоростью скачивания/отдачи
-        trackerStatusLabel = new Label("");
-        trackerStatusDot = new Circle(5, Color.GRAY);
-        downloadSpeedLabel = new Label("↓ 0 Б/с");
-        uploadSpeedLabel = new Label("↑ 0 Б/с");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        updateTrackerStatus();
-        // КОД С ТЕСТОВЫМИ ДАННЫМИ (НЕ ЗАБЫТЬ ПРО PLATFORM.RUNLATER) ----
-        updateTransferSpeeds(1_234_567, 67);
-        // FLAG_CHECK_LATER ---------------------------------------------
-        HBox connectServerStatus = new HBox(
-                trackerStatusDot,
-                new Label("Трекер:"),
-                trackerStatusLabel,
-                new Separator(Orientation.VERTICAL),
-                spacer,
-                new Separator(Orientation.VERTICAL),
-                downloadSpeedLabel,
-                new Separator(Orientation.VERTICAL),
-                uploadSpeedLabel
-        );
-        connectServerStatus.getStyleClass().add("tracker-status");
-
         // BorderPane для расположения элементов
         root.setCenter(myFilesView);
         root.setLeft(leftMenuWithButtons);
-        root.setBottom(connectServerStatus);
+        root.setBottom(createStatusBar());
 
         // Текущая сцена
         Scene scene = new Scene(root, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
@@ -210,6 +150,35 @@ public final class P2pApplication extends Application {
 
         // Показ окна
         stage.show();
+    }
+
+    private static SharedFilesService prepareSharedFiles(Stage stage) {
+        Path directory = Path.of(
+                System.getProperty("user.home"),
+                ".p2p-client-NSU",
+                "shared"
+        );
+        SharedFilesService service = new SharedFilesService(directory);
+
+        String message;
+        try {
+            service.createSharedDirectory();
+            return service;
+        } catch (FileAlreadyExistsException e) {
+            message = "Путь уже занят: " + e.getFile()
+                    + "\nПереименуйте или переместите мешающий файл "
+                    + "и запустите приложение снова.";
+        } catch (IOException e) {
+            message = "Проверьте путь и права доступа для папки:\n" + e.getMessage();
+        }
+
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.initOwner(stage);
+        alert.setTitle("Ошибка запуска");
+        alert.setHeaderText("Не удалось создать папку раздач");
+        alert.setContentText(message);
+        alert.showAndWait();
+        return null;
     }
 
     private static Parent createLeftMenuWithButtons(
@@ -278,31 +247,24 @@ public final class P2pApplication extends Application {
     }
 
     private void updateTrackerStatus() {
-        // ИСПОЛЬЗУЕТСЯ ТЕСТОВЫЙ КОД ---
+        // FLAG_CHECK_LATER: получать реальный статус из ядра.
         getTestStatus().thenAccept(snapshot -> {
             ConnectionState status = snapshot.trackerConnectionState();
+
             Platform.runLater(() -> {
-                switch (status) {
-                    case CONNECTING -> {
-                        trackerStatusLabel.setText("Подключение...");
-                        trackerStatusDot.setFill(Color.ORANGE);
-                    }
-                    case ONLINE -> {
-                        trackerStatusLabel.setText("Подключён");
-                        trackerStatusDot.setFill(Color.LIMEGREEN);
-                    }
-                    case OFFLINE -> {
-                        trackerStatusLabel.setText("Нет соединения");
-                        trackerStatusDot.setFill(Color.RED);
-                    }
-                    case STOPPED -> {
-                        trackerStatusLabel.setText("Клиент остановлен");
-                        trackerStatusDot.setFill(Color.GRAY);
-                    }
-                }
+                trackerStatusLabel.setText(switch (status) {
+                    case CONNECTING -> "Подключение...";
+                    case ONLINE -> "Подключён";
+                    case OFFLINE -> "Нет соединения";
+                    case STOPPED -> "Клиент остановлен";
+                });
+
+                trackerStatusDot.getStyleClass().setAll(
+                        "tracker-dot",
+                        "tracker-dot-" + status.name().toLowerCase(Locale.ROOT)
+                );
             });
         });
-        // FLAG_CHECK_LATER ------------
     }
 
     private void updateTransferSpeeds(long downloadBps, long uploadBps) {
@@ -326,5 +288,36 @@ public final class P2pApplication extends Application {
         } catch (IOException e) {
             System.err.println("Ошибка загрузки шрифта " + resourcePath + ": " + e.getMessage());
         }
+    }
+
+    private HBox createStatusBar() {
+        trackerStatusLabel = new Label();
+        trackerStatusDot = new Circle(TRACKER_DOT_RADIUS);
+        trackerStatusDot.getStyleClass().add("tracker-dot");
+
+        downloadSpeedLabel = new Label();
+        uploadSpeedLabel = new Label();
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox statusBar = new HBox(
+                trackerStatusDot,
+                new Label("Трекер:"),
+                trackerStatusLabel,
+                new Separator(Orientation.VERTICAL),
+                spacer,
+                new Separator(Orientation.VERTICAL),
+                downloadSpeedLabel,
+                new Separator(Orientation.VERTICAL),
+                uploadSpeedLabel
+        );
+        statusBar.getStyleClass().add("tracker-status");
+
+        updateTrackerStatus();
+        // FLAG_CHECK_LATER: получать реальные скорости из ядра.
+        updateTransferSpeeds(1_234_567, 67);
+
+        return statusBar;
     }
 }
