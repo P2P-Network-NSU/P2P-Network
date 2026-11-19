@@ -1,12 +1,14 @@
 package ru.nsu.p2p.client.event;
 
+import ru.nsu.p2p.common.api.ClientEvents;
 import ru.nsu.p2p.common.client.ClientStatusSnapshot;
 import ru.nsu.p2p.common.event.ClientEventListener;
+import ru.nsu.p2p.common.event.Subscription;
 import ru.nsu.p2p.common.stream.StreamSnapshot;
 import ru.nsu.p2p.common.transfer.ShareSnapshot;
 import ru.nsu.p2p.common.transfer.TransferSnapshot;
 
-public class ClientEventDispatcher implements EventBus, ClientEventListener {
+public class ClientEventDispatcher implements EventBus, ClientEvents {
     @Override
     public void publishTransferUpdated(TransferSnapshot snapshot) {
 
@@ -28,22 +30,7 @@ public class ClientEventDispatcher implements EventBus, ClientEventListener {
     }
 
     @Override
-    public void onTransferUpdated(TransferSnapshot snapshot) {
-
-    }
-
-    @Override
-    public void onShareUpdated(ShareSnapshot snapshot) {
-
-    }
-
-    @Override
-    public void onStreamUpdated(StreamSnapshot snapshot) {
-
-    }
-
-    @Override
-    public void onClientStatusUpdated(ClientStatusSnapshot snapshot) {
-
+    public Subscription subscribe(ClientEventListener listener) {
+        return null;
     }
 }
