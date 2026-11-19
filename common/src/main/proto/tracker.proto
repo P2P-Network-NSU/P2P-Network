@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package tracker;
+
+option java_package = "ru.nsu.p2p.common.proto.tracker";
+option java_multiple_files = true;
+
+// =========================
+// БАЗОВЫЕ СТРУКТУРЫ
+// =========================
+
+message PeerAddressDto {
+  string host = 1;
+  int32 port = 2;
+}
+
+message PeerInfoDto {
+  string peer_id = 1;
+  PeerAddressDto address = 2;
+  int64 last_seen_millis = 3;
+}
+
+message FileManifestDto {
+  string file_id = 1;
+  string original_name = 2;
+  int64 size_bytes = 3;
+  int64 chunk_size_bytes = 4;
+  string media_type = 5;
+  repeated string chunk_hashes = 6;
+}
+
+message CatalogEntryDto {
+  string file_id = 1;
+  string title = 2;
+  string description = 3;
+  string original_name = 4;
+  int64 size_bytes = 5;
+  string media_type = 6;
+  int32 available_peer_count = 7;
+}
+
+// ==========================================
+// ЗАПРОСЫ И ОТВЕТЫ (Для HTTP/3 Body)
+// ==========================================
+
+// POST /tracker/register
+message RegisterPeerRequestDto {
+  string peer_id = 1;
+  PeerAddressDto address = 2;
+}
+
+// Ответ на POST /tracker/register
+message PeerLeaseResponseDto {
+  PeerAddressDto address = 1;
+  int32 heartbeat_interval_seconds = 2;
+  int32 lease_ttl_seconds = 3;
+}
+
+// POST /tracker/heartbeat
+message HeartbeatRequestDto {
+  string peer_id = 1;
+  repeated string file_ids = 2;
+}
+// (Ответа нет, HTTP 204 No Content)
+
+// POST /tracker/publish
+message PublishFileRequestDto {
+  string peer_id = 1;
+  FileManifestDto manifest = 2;
+  string title = 3;
+  string description = 4;
+}
+// (Ответа нет, HTTP 204 No Content)
+
+// POST /tracker/catalog/search
+message CatalogQueryDto {
+  string text = 1;
+  int64 offset = 2;
+  int32 limit = 3;
+}
+
+// Ответ на POST /tracker/catalog/search
+message CatalogResponseDto {
+  repeated CatalogEntryDto entries = 1;
+  int64 next_offset = 2;
+}
+
+// GET /tracker/peers?fileId={id}
+// (Запроса нет, fileId передается в URL)
+message PeerListResponseDto {
+  string file_id = 1;
+  repeated PeerInfoDto peers = 2;
+}
+
+// GET /tracker/manifest?fileId={id}
+// (Запроса нет, fileId передается в URL. В ответе возвращается просто FileManifestDto)
