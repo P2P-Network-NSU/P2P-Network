@@ -15,5 +15,7 @@ public interface ShareService {
 
     CompletionStage<List<ShareSnapshot>> listShares();
 
+    CompletionStage<ShareSnapshot> shareDownloaded(String transferId);
+
     Set<String> getActiveFileIds();
 }

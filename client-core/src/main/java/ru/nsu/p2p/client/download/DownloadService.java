@@ -19,4 +19,8 @@ public interface DownloadService {
     CompletionStage<TransferSnapshot> get(String transferId);
 
     CompletionStage<List<TransferSnapshot>> list();
+
+    CompletionStage<String> saveCopy(String transferId, String targetPath);
+
+    void prioritizeOffset(String transferId, long byteOffset);
 }
