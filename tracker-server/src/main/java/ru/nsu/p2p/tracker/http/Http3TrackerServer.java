@@ -9,9 +9,6 @@ import tech.kwik.core.server.ServerConnector;
 import tech.kwik.flupke.server.Http3ApplicationProtocolFactory;
 import tech.kwik.flupke.server.HttpRequestHandler;
 
-/**
- * Инфраструктурный класс. Управляет жизненным циклом QUIC/HTTP3 сервера.
- */
 public class Http3TrackerServer {
 
     public static final int MAX_BIDIRECT_STREAMS = 100;
@@ -35,9 +32,6 @@ public class Http3TrackerServer {
         this.executor = executor;
     }
 
-    /**
-     * Запускает сервер в неблокирующем режиме.
-     */
     public void start() throws IOException {
         if (!state.compareAndSet(State.NEW, State.RUNNING)) {
             throw new IllegalStateException(
@@ -56,9 +50,6 @@ public class Http3TrackerServer {
         }
     }
 
-    /**
-     * Мягко останавливает сервер и гасит пул потоков. Идемпотентный метод.
-     */
     public void stop() {
         if (state.getAndSet(State.STOPPED) != State.STOPPED) {
             System.out.println("Остановка HTTP/3 Трекера...");
