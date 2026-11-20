@@ -49,10 +49,6 @@ public class RegisterEndpointHandler implements EndpointHandler {
             TrackerMapper.toDomain(requestDto.getAddress())
         );
 
-        return PeerLeaseResponseDto.newBuilder()
-            .setAddress(TrackerMapper.toDto(lease.address()))
-            .setHeartbeatIntervalSeconds(lease.heartbeatIntervalSeconds())
-            .setLeaseTtlSeconds(lease.leaseTtlSeconds())
-            .build();
+        return TrackerMapper.toDto(lease);
     }
 }

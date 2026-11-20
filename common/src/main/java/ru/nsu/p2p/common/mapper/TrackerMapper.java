@@ -7,6 +7,7 @@ import ru.nsu.p2p.common.model.CatalogQuery;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.common.model.PeerInfo;
+import ru.nsu.p2p.common.model.PeerLeaseResponse;
 import ru.nsu.p2p.common.model.PeerList;
 import ru.nsu.p2p.common.proto.tracker.CatalogEntryDto;
 import ru.nsu.p2p.common.proto.tracker.CatalogQueryDto;
@@ -14,6 +15,7 @@ import ru.nsu.p2p.common.proto.tracker.CatalogResponseDto;
 import ru.nsu.p2p.common.proto.tracker.FileManifestDto;
 import ru.nsu.p2p.common.proto.tracker.PeerAddressDto;
 import ru.nsu.p2p.common.proto.tracker.PeerInfoDto;
+import ru.nsu.p2p.common.proto.tracker.PeerLeaseResponseDto;
 import ru.nsu.p2p.common.proto.tracker.PeerListResponseDto;
 
 public final class TrackerMapper {
@@ -138,6 +140,23 @@ public final class TrackerMapper {
             .setText(domain.text() == null ? "" : domain.text())
             .setOffset(domain.offset())
             .setLimit(domain.limit())
+            .build();
+    }
+
+    // --- PeerLeaseResponse ---
+    public static PeerLeaseResponse toDomain(PeerLeaseResponseDto dto) {
+        return new PeerLeaseResponse(
+            toDomain(dto.getAddress()),
+            dto.getHeartbeatIntervalSeconds(),
+            dto.getLeaseTtlSeconds()
+        );
+    }
+
+    public static PeerLeaseResponseDto toDto(PeerLeaseResponse domain) {
+        return PeerLeaseResponseDto.newBuilder()
+            .setAddress(toDto(domain.address()))
+            .setHeartbeatIntervalSeconds(domain.heartbeatIntervalSeconds())
+            .setLeaseTtlSeconds(domain.leaseTtlSeconds())
             .build();
     }
 }
