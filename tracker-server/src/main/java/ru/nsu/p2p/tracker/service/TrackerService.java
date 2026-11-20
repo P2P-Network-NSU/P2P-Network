@@ -12,8 +12,8 @@ import ru.nsu.p2p.common.model.CatalogQuery;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.common.model.PeerInfo;
+import ru.nsu.p2p.common.model.PeerLeaseResponse;
 import ru.nsu.p2p.common.model.PeerList;
-import ru.nsu.p2p.common.protocol.tracker.PeerLeaseResponse;
 import ru.nsu.p2p.tracker.repository.CatalogRepository;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
 
