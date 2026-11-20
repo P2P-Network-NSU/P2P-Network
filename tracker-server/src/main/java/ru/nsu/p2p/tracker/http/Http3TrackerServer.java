@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import tech.kwik.core.log.SysOutLogger;
 import tech.kwik.core.server.ServerConnectionConfig;
 import tech.kwik.core.server.ServerConnector;
 import tech.kwik.flupke.server.Http3ApplicationProtocolFactory;
@@ -72,6 +73,7 @@ public class Http3TrackerServer {
             .withPort(port)
             .withKeyStore(tlsConfig.keyStore(), tlsConfig.certAlias(), tlsConfig.keyPassword())
             .withConfiguration(connectionConfig)
+            .withLogger(new SysOutLogger())
             .build();
 
         connector.registerApplicationProtocol(
@@ -81,6 +83,7 @@ public class Http3TrackerServer {
 
         return connector;
     }
+
 
     private enum State {
         NEW,
