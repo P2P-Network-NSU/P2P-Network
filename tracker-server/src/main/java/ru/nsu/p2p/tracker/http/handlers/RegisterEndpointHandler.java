@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import ru.nsu.p2p.common.mapper.TrackerMapper;
-import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.common.model.PeerLeaseResponse;
 import ru.nsu.p2p.common.proto.tracker.PeerLeaseResponseDto;
 import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;

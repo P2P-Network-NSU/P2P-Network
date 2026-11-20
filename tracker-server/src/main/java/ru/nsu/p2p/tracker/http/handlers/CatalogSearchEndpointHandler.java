@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import ru.nsu.p2p.common.mapper.TrackerMapper;
 import ru.nsu.p2p.common.model.CatalogPage;
-import ru.nsu.p2p.common.proto.tracker.CatalogEntryDto;
 import ru.nsu.p2p.common.proto.tracker.CatalogQueryDto;
 import ru.nsu.p2p.common.proto.tracker.CatalogResponseDto;
 import ru.nsu.p2p.tracker.http.EndpointHandler;
