@@ -1,4 +1,4 @@
-package ru.nsu.p2p.tracker.http.handlers;
+package ru.nsu.p2p.tracker.http.handler.post_handlers;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,8 +7,8 @@ import ru.nsu.p2p.common.mapper.TrackerMapper;
 import ru.nsu.p2p.common.model.CatalogPage;
 import ru.nsu.p2p.common.proto.tracker.CatalogQueryDto;
 import ru.nsu.p2p.common.proto.tracker.CatalogResponseDto;
-import ru.nsu.p2p.tracker.http.EndpointHandler;
-import ru.nsu.p2p.tracker.http.HttpStatuses;
+import ru.nsu.p2p.tracker.http.handler.EndpointHandler;
+import ru.nsu.p2p.tracker.http.statuses.HttpStatuses;
 import ru.nsu.p2p.tracker.service.TrackerService;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;

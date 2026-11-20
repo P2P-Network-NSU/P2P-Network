@@ -1,9 +1,11 @@
-package ru.nsu.p2p.tracker.http;
+package ru.nsu.p2p.tracker.http.routing;
 
 import java.util.HashMap;
 import java.util.Map;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
+import ru.nsu.p2p.tracker.http.statuses.HttpStatuses;
+import ru.nsu.p2p.tracker.http.handler.EndpointHandler;
 import tech.kwik.flupke.server.HttpRequestHandler;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;

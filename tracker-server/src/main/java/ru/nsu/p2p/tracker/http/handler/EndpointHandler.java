@@ -1,4 +1,4 @@
-package ru.nsu.p2p.tracker.http;
+package ru.nsu.p2p.tracker.http.handler;
 
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;

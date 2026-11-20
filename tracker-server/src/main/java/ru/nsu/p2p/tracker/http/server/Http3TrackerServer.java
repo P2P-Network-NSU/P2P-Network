@@ -1,4 +1,4 @@
-package ru.nsu.p2p.tracker.http;
+package ru.nsu.p2p.tracker.http.server;
 
 import java.io.IOException;
 import java.util.Collections;
