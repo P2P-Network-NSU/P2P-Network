@@ -10,9 +10,6 @@ import tech.kwik.flupke.server.HttpServerResponse;
 
 public class HttpRouter implements HttpRequestHandler {
 
-    public static final int HTTP_INTERNAL_SERVER_ERROR = 500;
-    public static final int HTTP_NOT_FOUND_ERROR = 404;
-    public static final int HTTP_BAD_REQUEST_ERROR = 400;
     private final Map<RouteKey, EndpointHandler> routes = new HashMap<>();
 
     public void register(String method, String path, EndpointHandler handler) {
@@ -26,7 +23,7 @@ public class HttpRouter implements HttpRequestHandler {
             EndpointHandler handler = routes.get(routeKey);
 
             if (handler == null) {
-                response.setStatus(HTTP_NOT_FOUND_ERROR);
+                response.setStatus(HttpResponseCodes.HTTP_NOT_FOUND_ERROR);
                 sendNoneBodyResponse(response);
                 return;
             }
@@ -36,18 +33,18 @@ public class HttpRouter implements HttpRequestHandler {
         } catch (ClientOperationException e) {
             ErrorCode errorCode = e.getError().code();
             if (errorCode == ErrorCode.INVALID_ARGUMENT) {
-                response.setStatus(HTTP_BAD_REQUEST_ERROR);
+                response.setStatus(HttpResponseCodes.HTTP_BAD_REQUEST_ERROR);
             } else if (errorCode == ErrorCode.NOT_FOUND) {
-                response.setStatus(HTTP_NOT_FOUND_ERROR);
+                response.setStatus(HttpResponseCodes.HTTP_NOT_FOUND_ERROR);
             } else {
-                response.setStatus(HTTP_INTERNAL_SERVER_ERROR);
+                response.setStatus(HttpResponseCodes.HTTP_INTERNAL_SERVER_ERROR);
             }
             sendNoneBodyResponse(response);
 
         } catch (Exception e) {
             System.err.println("Внутренняя ошибка сервера: " + e.getMessage());
             e.printStackTrace();
-            response.setStatus(HTTP_INTERNAL_SERVER_ERROR);
+            response.setStatus(HttpResponseCodes.HTTP_INTERNAL_SERVER_ERROR);
             sendNoneBodyResponse(response);
         }
     }
