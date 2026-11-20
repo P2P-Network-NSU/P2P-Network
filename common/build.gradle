@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'com.google.protobuf' version '0.9.4'
 }
 
@@ -11,7 +11,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.google.protobuf:protobuf-java:3.25.3'
+    api 'com.google.protobuf:protobuf-java:3.25.3'
+
     testImplementation platform('org.junit:junit-bom:6.0.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
