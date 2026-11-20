@@ -23,7 +23,7 @@ public class HttpRouter implements HttpRequestHandler {
             EndpointHandler handler = routes.get(routeKey);
 
             if (handler == null) {
-                response.setStatus(HttpResponseCodes.HTTP_NOT_FOUND_ERROR);
+                response.setStatus(HttpStatuses.HTTP_NOT_FOUND_ERROR);
                 sendNoneBodyResponse(response);
                 return;
             }
@@ -33,18 +33,18 @@ public class HttpRouter implements HttpRequestHandler {
         } catch (ClientOperationException e) {
             ErrorCode errorCode = e.getError().code();
             if (errorCode == ErrorCode.INVALID_ARGUMENT) {
-                response.setStatus(HttpResponseCodes.HTTP_BAD_REQUEST_ERROR);
+                response.setStatus(HttpStatuses.HTTP_BAD_REQUEST_ERROR);
             } else if (errorCode == ErrorCode.NOT_FOUND) {
-                response.setStatus(HttpResponseCodes.HTTP_NOT_FOUND_ERROR);
+                response.setStatus(HttpStatuses.HTTP_NOT_FOUND_ERROR);
             } else {
-                response.setStatus(HttpResponseCodes.HTTP_INTERNAL_SERVER_ERROR);
+                response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
             }
             sendNoneBodyResponse(response);
 
         } catch (Exception e) {
             System.err.println("Внутренняя ошибка сервера: " + e.getMessage());
             e.printStackTrace();
-            response.setStatus(HttpResponseCodes.HTTP_INTERNAL_SERVER_ERROR);
+            response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
             sendNoneBodyResponse(response);
         }
     }
