@@ -9,7 +9,7 @@ import ru.nsu.p2p.common.model.PeerLeaseResponse;
 import ru.nsu.p2p.common.proto.tracker.PeerLeaseResponseDto;
 import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
 import ru.nsu.p2p.tracker.http.EndpointHandler;
-import ru.nsu.p2p.tracker.http.HttpResponseCodes;
+import ru.nsu.p2p.tracker.http.HttpStatuses;
 import ru.nsu.p2p.tracker.service.TrackerService;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;
@@ -27,32 +27,32 @@ public class RegisterEndpointHandler implements EndpointHandler {
         RegisterPeerRequestDto requestDto = getRequestDto(request);
         PeerLeaseResponseDto responseDto = getResponseDto(requestDto);
 
-        response.setStatus(HttpResponseCodes.HTTP_OK);
+        response.setStatus(HttpStatuses.HTTP_OK);
         try (OutputStream out = response.getOutputStream()) {
             responseDto.writeTo(out);
         }
     }
 
-    private PeerLeaseResponseDto getResponseDto(RegisterPeerRequestDto requestDto) {
-        String peerId = requestDto.getPeerId();
-        PeerAddress address = TrackerMapper.toDomain(requestDto.getAddress());
+    private RegisterPeerRequestDto getRequestDto(HttpServerRequest request) throws IOException {
+        RegisterPeerRequestDto requestDto;
 
-        PeerLeaseResponse lease = trackerService.registerPeer(peerId, address);
+        try (InputStream in = request.body()) {
+            requestDto = RegisterPeerRequestDto.parseFrom(in);
+        }
+
+        return requestDto;
+    }
+
+    private PeerLeaseResponseDto getResponseDto(RegisterPeerRequestDto requestDto) {
+        PeerLeaseResponse lease = trackerService.registerPeer(
+            requestDto.getPeerId(),
+            TrackerMapper.toDomain(requestDto.getAddress())
+        );
 
         return PeerLeaseResponseDto.newBuilder()
             .setAddress(TrackerMapper.toDto(lease.address()))
             .setHeartbeatIntervalSeconds(lease.heartbeatIntervalSeconds())
             .setLeaseTtlSeconds(lease.leaseTtlSeconds())
             .build();
-    }
-
-    private RegisterPeerRequestDto getRequestDto(HttpServerRequest request)
-        throws IOException {
-        RegisterPeerRequestDto requestDto;
-
-        try (InputStream in = request.body()) {
-            requestDto = RegisterPeerRequestDto.parseFrom(in);
-        }
-        return requestDto;
     }
 }
