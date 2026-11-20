@@ -10,4 +10,5 @@ public record TlsConfig(
     String certAlias,
     char[] keyPassword
 ) {
+
 }

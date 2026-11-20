@@ -38,7 +38,7 @@ public class PublishEndpointHandler implements EndpointHandler {
     private PublishFileRequestDto getRequestDto(HttpServerRequest request) throws IOException {
         PublishFileRequestDto requestDto;
 
-        try (InputStream in =  request.body()) {
+        try (InputStream in = request.body()) {
             requestDto = PublishFileRequestDto.parseFrom(in);
         }
 

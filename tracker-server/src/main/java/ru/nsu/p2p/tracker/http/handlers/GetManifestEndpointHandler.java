@@ -14,6 +14,7 @@ import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;
 
 public class GetManifestEndpointHandler implements EndpointHandler {
+
     private final TrackerService trackerService;
 
     public GetManifestEndpointHandler(TrackerService trackerService) {

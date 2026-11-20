@@ -31,6 +31,7 @@ public class CatalogSearchEndpointHandler implements EndpointHandler {
             responseDto.writeTo(out);
         }
     }
+
     private CatalogQueryDto getRequestDto(HttpServerRequest request) throws IOException {
         CatalogQueryDto requestDto;
 
@@ -40,6 +41,7 @@ public class CatalogSearchEndpointHandler implements EndpointHandler {
 
         return requestDto;
     }
+
     private CatalogResponseDto getResponseDto(CatalogQueryDto requestDto) {
         CatalogPage page = trackerService.searchCatalog(TrackerMapper.toDomain(requestDto));
 
