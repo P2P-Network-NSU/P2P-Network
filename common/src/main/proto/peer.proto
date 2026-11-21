@@ -4,18 +4,7 @@ package peer;
 option java_package = "ru.nsu.p2p.common.proto.peer";
 option java_multiple_files = true;
 
-// POST /peer/handshake
-message HandshakeRequestDto {
-  string file_id = 1;
-  string peer_id = 2;
-}
-
 // GET /peer/bitfield?fileId={id}
 message BitfieldMessageDto {
   bytes available_chunks = 1;
-}
-
-// POST /peer/have
-message HaveChunkMessageDto {
-  int32 chunk_index = 1;
 }

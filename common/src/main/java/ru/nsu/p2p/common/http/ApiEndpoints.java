@@ -35,15 +35,10 @@ public final class ApiEndpoints {
     // P2P API (Пир -> Пир)
     // ==========================================
 
-    /** POST: Установка соединения. Тело: HandshakeRequestDto */
-    public static final String PEER_HANDSHAKE = "/peer/handshake";
-
     /** GET: Получение битовой маски. Параметр: ?fileId={id} */
     public static final String PEER_BITFIELD = "/peer/bitfield";
 
     /** GET: Скачивание сырых байтов чанка. Параметры: ?fileId={id}&index={i} */
     public static final String PEER_CHUNK = "/peer/chunk";
 
-    /** POST: Уведомление о скачанном чанке. Тело: HaveChunkMessageDto */
-    public static final String PEER_HAVE_CHUNK = "/peer/have";
 }
