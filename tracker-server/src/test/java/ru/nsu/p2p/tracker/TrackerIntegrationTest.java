@@ -1,5 +1,13 @@
 package ru.nsu.p2p.tracker;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +25,7 @@ import ru.nsu.p2p.tracker.service.TrackerService;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.concurrent.Executors;
+import tech.kwik.flupke.Http3ClientBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,15 +66,15 @@ class TrackerIntegrationTest {
             trustStore.load(is, "changeit".toCharArray());
         }
 
-        javax.net.ssl.TrustManagerFactory tmf = javax.net.ssl.TrustManagerFactory.getInstance(
-            javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm()
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+            TrustManagerFactory.getDefaultAlgorithm()
         );
         tmf.init(trustStore);
 
-        javax.net.ssl.X509TrustManager myTrustManager =
-            (javax.net.ssl.X509TrustManager) tmf.getTrustManagers()[0];
+        X509TrustManager myTrustManager =
+            (X509TrustManager) tmf.getTrustManagers()[0];
 
-        java.net.http.HttpClient client = new tech.kwik.flupke.Http3ClientBuilder()
+        HttpClient client = new Http3ClientBuilder()
             .trustManager(myTrustManager)
             .build();
 
@@ -74,12 +83,12 @@ class TrackerIntegrationTest {
             .setAddress(PeerAddressDto.newBuilder().setHost("127.0.0.1").setPort(6881).build())
             .build();
 
-        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-            .uri(java.net.URI.create("https://localhost:" + TEST_PORT + ApiEndpoints.TRACKER_REGISTER))
-            .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(requestDto.toByteArray()))
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("https://localhost:" + TEST_PORT + ApiEndpoints.TRACKER_REGISTER))
+            .POST(BodyPublishers.ofByteArray(requestDto.toByteArray()))
             .build();
 
-        java.net.http.HttpResponse<byte[]> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofByteArray());
+        HttpResponse<byte[]> response = client.send(request, BodyHandlers.ofByteArray());
 
         assertEquals(200, response.statusCode());
 
