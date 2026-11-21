@@ -14,21 +14,6 @@ public class HttpRouter implements HttpRequestHandler {
 
     private final Map<RouteKey, EndpointHandler> routes = new HashMap<>();
 
-    private static void sendNoneBodyResponse(HttpServerResponse response) {
-        try (var _ = response.getOutputStream()) {
-
-        } catch (Exception ioException) {
-            System.err.println("Ошибка при закрытии потока ответа: " + ioException.getMessage());
-        }
-    }
-
-    private static RouteKey getRouteKey(HttpServerRequest request) {
-        String method = request.method();
-        String path = request.path();
-        String cleanPath = path.split("\\?")[0];
-        return new RouteKey(method, cleanPath);
-    }
-
     public void register(String method, String path, EndpointHandler handler) {
         routes.put(new RouteKey(method, path), handler);
     }
@@ -64,5 +49,20 @@ public class HttpRouter implements HttpRequestHandler {
             response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
             sendNoneBodyResponse(response);
         }
+    }
+
+    private void sendNoneBodyResponse(HttpServerResponse response) {
+        try (var _ = response.getOutputStream()) {
+
+        } catch (Exception ioException) {
+            System.err.println("Ошибка при закрытии потока ответа: " + ioException.getMessage());
+        }
+    }
+
+    private RouteKey getRouteKey(HttpServerRequest request) {
+        String method = request.method();
+        String path = request.path();
+        String cleanPath = path.split("\\?")[0];
+        return new RouteKey(method, cleanPath);
     }
 }
