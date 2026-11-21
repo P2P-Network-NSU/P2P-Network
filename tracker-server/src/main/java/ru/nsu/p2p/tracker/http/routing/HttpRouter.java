@@ -1,5 +1,6 @@
 package ru.nsu.p2p.tracker.http.routing;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashMap;
 import java.util.Map;
 import ru.nsu.p2p.common.error.ClientOperationException;
@@ -43,7 +44,11 @@ public class HttpRouter implements HttpRequestHandler {
             }
             sendNoneBodyResponse(response);
 
-        } catch (Exception e) {
+        } catch (InvalidProtocolBufferException e) {
+            response.setStatus(HttpStatuses.HTTP_BAD_REQUEST_ERROR);
+            sendNoneBodyResponse(response);
+        }
+        catch (Exception e) {
             System.err.println("Внутренняя ошибка сервера: " + e.getMessage());
             e.printStackTrace();
             response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
