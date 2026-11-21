@@ -21,6 +21,7 @@ import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
 import ru.nsu.p2p.common.http.ApiEndpoints;
+import ru.nsu.p2p.common.http.HttpStatuses;
 import ru.nsu.p2p.common.mapper.TrackerMapper;
 import ru.nsu.p2p.common.model.CatalogPage;
 import ru.nsu.p2p.common.model.CatalogQuery;
@@ -40,6 +41,11 @@ import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
  * HTTP/3-реализация {@link TrackerGateway} поверх {@link Http3Transport} и Protobuf.
  */
 public final class HttpTrackerGateway implements TrackerGateway {
+
+    public static final int PORT_MAX = 65535;
+    public static final int PORT_MIN = 0;
+    public static final int INTERNAL_SERVER_ERROR_MIN = 500;
+    public static final int INTERNAL_SERVER_ERROR_MAX = 600;
 
     private final String baseUrl;
     private final Http3Transport transport;
@@ -231,28 +237,31 @@ public final class HttpTrackerGateway implements TrackerGateway {
 
     private static ClientOperationException mapHttpStatusError(int statusCode, URI uri) {
         return switch (statusCode) {
-            case 400 -> new ClientOperationException(new OperationError(
+            case HttpStatuses.HTTP_BAD_REQUEST -> new ClientOperationException(new OperationError(
                 ErrorCode.INVALID_ARGUMENT,
                 "Трекер отклонил запрос (HTTP 400): " + uri,
                 false
             ));
-            case 404 -> new ClientOperationException(new OperationError(
+            case HttpStatuses.HTTP_NOT_FOUND -> new ClientOperationException(new OperationError(
                 ErrorCode.NOT_FOUND,
                 "Ресурс не найден на трекере (HTTP 404): " + uri,
                 false
             ));
-            case 409 -> new ClientOperationException(new OperationError(
+            case HttpStatuses.HTTP_STATE_CONFLICT -> new ClientOperationException(new OperationError(
                 ErrorCode.INVALID_STATE,
                 "Конфликт состояния на трекере (HTTP 409): " + uri,
                 false
             ));
-            case 408, 429 -> new ClientOperationException(new OperationError(
-                ErrorCode.TRACKER_UNAVAILABLE,
-                "Трекер временно недоступен (HTTP " + statusCode + "): " + uri,
-                true
-            ));
+            case HttpStatuses.HTTP_REQUEST_TIMEOUT, HttpStatuses.HTTP_TOO_MANY_REQUESTS ->
+                new ClientOperationException(
+                    new OperationError(
+                        ErrorCode.TRACKER_UNAVAILABLE,
+                        "Трекер временно недоступен (HTTP " + statusCode + "): " + uri,
+                        true
+                    )
+                );
             default -> {
-                if (statusCode >= 500 && statusCode < 600) {
+                if (statusCode >= INTERNAL_SERVER_ERROR_MIN && statusCode < INTERNAL_SERVER_ERROR_MAX) {
                     yield new ClientOperationException(new OperationError(
                         ErrorCode.TRACKER_UNAVAILABLE,
                         "Внутренняя ошибка трекера (HTTP " + statusCode + "): " + uri,
@@ -318,8 +327,8 @@ public final class HttpTrackerGateway implements TrackerGateway {
         if (address == null
             || address.host() == null
             || address.host().isBlank()
-            || address.port() <= 0
-            || address.port() > 65535
+            || address.port() <= PORT_MIN
+            || address.port() > PORT_MAX
         ) {
             throw createInvalidArgumentException(
                 "передан некорректный адрес трекера в HttpTrackerGateway"
