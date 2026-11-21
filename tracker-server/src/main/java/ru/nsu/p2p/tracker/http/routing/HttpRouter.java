@@ -25,6 +25,8 @@ public class HttpRouter implements HttpRequestHandler {
             RouteKey routeKey = getRouteKey(request);
             EndpointHandler handler = routes.get(routeKey);
 
+            System.out.println("[HTTP/3] " + request.method() + " " + request.path());
+
             if (handler == null) {
                 response.setStatus(HttpStatuses.HTTP_NOT_FOUND_ERROR);
                 sendNoneBodyResponse(response);
