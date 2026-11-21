@@ -1,5 +1,7 @@
 package ru.nsu.p2p.client.core;
 
+import static org.mockito.Mockito.lenient;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -75,8 +77,8 @@ class P2PClientCoreTest {
     void startShouldRegisterPublishStatusesAndAllowCatalogCalls() {
         when(gateway.register("peer-1", VALID_SETTINGS.advertisedPeerAddress()))
             .thenReturn(CompletableFuture.completedFuture(Duration.ofSeconds(30)));
-        when(gateway.heartbeat(eq("peer-1"), any()))
-            .thenReturn(CompletableFuture.completedFuture(null));
+        lenient().when(gateway.heartbeat(eq("peer-1"), any()))
+                .thenReturn(CompletableFuture.completedFuture(null));
 
         CatalogQuery query = new CatalogQuery("matrix", 0, 10);
         CatalogPage expectedPage = new CatalogPage(List.of(), -1);
@@ -173,8 +175,8 @@ class P2PClientCoreTest {
 
         when(gateway.register(any(), any()))
             .thenReturn(CompletableFuture.completedFuture(Duration.ofSeconds(30)));
-        when(gateway.heartbeat(any(), any()))
-            .thenReturn(CompletableFuture.completedFuture(null));
+        lenient().when(gateway.heartbeat(any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(null));
 
         core.start(VALID_SETTINGS).toCompletableFuture().join();
         core.shutdown().toCompletableFuture().join();
