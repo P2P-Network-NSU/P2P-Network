@@ -3,7 +3,7 @@ package ru.nsu.p2p.ui.files;
 import ru.nsu.p2p.common.transfer.ShareState;
 import java.io.File;
 
-record SharedFileItem(File file, long size, ShareState state) {
+public record SharedFileItem(File file, long size, ShareState state) {
 
     public String getName() {
         return file.getName();

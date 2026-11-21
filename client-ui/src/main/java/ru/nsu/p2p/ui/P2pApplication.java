@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 import java.io.InputStream;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import javafx.scene.control.Alert;
 import ru.nsu.p2p.common.client.ClientStatusSnapshot;
@@ -27,8 +28,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import ru.nsu.p2p.ui.files.SharedFilesService;
-
 import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
 import javafx.scene.Parent;
@@ -36,8 +35,10 @@ import javafx.scene.Parent;
 import ru.nsu.p2p.ui.files.MyFilesView;
 import ru.nsu.p2p.ui.catalog.CatalogView;
 import ru.nsu.p2p.ui.downloads.DownloadsView;
+import ru.nsu.p2p.ui.files.SharedFilesService;
 import ru.nsu.p2p.ui.format.DataSizeFormatters;
 import ru.nsu.p2p.ui.settings.SettingsView;
+import ru.nsu.p2p.ui.storage.DirectoryService;
 import ru.nsu.p2p.ui.stream.StreamView;
 
 // Stage - Окно
@@ -68,6 +69,7 @@ public final class P2pApplication extends Application {
 
     private Label trackerStatusLabel;
     private Circle trackerStatusDot;
+    private Label ipAddressLabel;
     private Label downloadSpeedLabel;
     private Label uploadSpeedLabel;
 
@@ -90,14 +92,37 @@ public final class P2pApplication extends Application {
     }
     // FLAG_CHECK_LATER ---
 
+//    final ClientSettings settings = new ClientSettings(
+//            new PeerAddress("localhost", 666),
+//            new PeerAddress("localhost", 67),
+//            UUID.randomUUID().toString(),
+//
+//    );
+//    final ClientLifecycle lifecycle = null;
+
     @Override
     public void start(Stage stage) {
+        //lifecycle.start(settings);
+
         System.setProperty("prism.lcdtext", "false");
         loadFont("/fonts/Nunito-Regular.ttf");
         loadFont("/fonts/Nunito-Bold.ttf");
 
-        SharedFilesService sharedFilesService = prepareSharedFiles(stage);
-        if (sharedFilesService == null) return;
+        Path clientDirectory = Path.of(
+                System.getProperty("user.home"),
+                ".p2p-client-NSU"
+        );
+
+        ClientDirectories directories;
+        try {
+            directories = prepareDirectories(clientDirectory);
+        } catch (IOException e) {
+            showStartupError(stage, e);
+            return;
+        }
+
+        SharedFilesService sharedFilesService = new SharedFilesService(directories.shared());
+
 
         // Главное окно
         BorderPane root = new BorderPane();
@@ -174,18 +199,16 @@ public final class P2pApplication extends Application {
         fileExecutor.shutdown();
     }
 
-    private static SharedFilesService prepareSharedFiles(Stage stage) {
+    private static Path prepareSpecialFolder(Stage stage, String name) {
         Path directory = Path.of(
                 System.getProperty("user.home"),
                 ".p2p-client-NSU",
-                "shared"
+                name
         );
-        SharedFilesService service = new SharedFilesService(directory);
 
         String message;
         try {
-            service.createSharedDirectory();
-            return service;
+            return Files.createDirectories(directory);
         } catch (FileAlreadyExistsException e) {
             message = "Путь уже занят: " + e.getFile()
                     + "\nПереименуйте или переместите мешающий файл "
@@ -201,6 +224,26 @@ public final class P2pApplication extends Application {
         alert.setContentText(message);
         alert.showAndWait();
         return null;
+    }
+
+    private record ClientDirectories(Path shared, Path downloads, Path settings, Path temp) {}
+
+    private static ClientDirectories prepareDirectories(Path clientDirectory) throws IOException {
+        return new ClientDirectories(
+                Files.createDirectories(clientDirectory.resolve("shared")),
+                Files.createDirectories(clientDirectory.resolve("downloads")),
+                Files.createDirectories(clientDirectory.resolve("settings")),
+                Files.createDirectories(clientDirectory.resolve("temp"))
+        );
+    }
+
+    private void showStartupError(Stage stage, IOException e) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.initOwner(stage);
+        alert.setTitle("Ошибка запуска");
+        alert.setHeaderText("Не удалось создать папку раздач");
+        alert.setContentText("Проверьте путь и права доступа для папки:\n" + e.getMessage());
+        alert.showAndWait();
     }
 
     private static Parent createLeftMenuWithButtons(
@@ -317,6 +360,8 @@ public final class P2pApplication extends Application {
         trackerStatusDot = new Circle(TRACKER_DOT_RADIUS);
         trackerStatusDot.getStyleClass().add("tracker-dot");
 
+        ipAddressLabel = new Label("Мой адрес:");
+
         downloadSpeedLabel = new Label();
         uploadSpeedLabel = new Label();
 
@@ -327,6 +372,8 @@ public final class P2pApplication extends Application {
                 trackerStatusDot,
                 new Label("Трекер:"),
                 trackerStatusLabel,
+                new Separator(Orientation.VERTICAL),
+                ipAddressLabel,
                 new Separator(Orientation.VERTICAL),
                 spacer,
                 new Separator(Orientation.VERTICAL),

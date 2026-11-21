@@ -10,29 +10,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ru.nsu.p2p.common.transfer.ShareState;
+import ru.nsu.p2p.ui.storage.DirectoryService;
 
-public final class SharedFilesService {
-
-    private final Path sharedDirectory;
+public final class SharedFilesService extends DirectoryService {
 
     public SharedFilesService(Path sharedDirectory) {
-        this.sharedDirectory = sharedDirectory;
-    }
-
-    public Path getDirectory() {
-        return sharedDirectory;
-    }
-
-    public void createSharedDirectory() throws IOException {
-        Files.createDirectories(sharedDirectory);
+        super(sharedDirectory);
     }
 
     File[] readSharedFiles() throws IOException {
-        File[] foundFiles = sharedDirectory.toFile().listFiles(File::isFile);
+        File[] foundFiles = getDirectory().toFile().listFiles(File::isFile);
 
         if (foundFiles == null) {
             throw new IOException(
-                    "Не удалось прочитать папку: " + sharedDirectory
+                    "Не удалось прочитать папку: " + getDirectory()
             );
         }
 
@@ -45,7 +36,7 @@ public final class SharedFilesService {
     }
 
     SharedFileItem copyFile(Path source) throws IOException {
-        Path destination = sharedDirectory.resolve(source.getFileName());
+        Path destination = getDirectory().resolve(source.getFileName());
 
         if (Files.exists(destination, LinkOption.NOFOLLOW_LINKS)) {
             throw new FileAlreadyExistsException(destination.toString());
@@ -57,7 +48,7 @@ public final class SharedFilesService {
     }
 
     void deleteFile(String fileName) throws IOException {
-        Files.delete(sharedDirectory.resolve(fileName));
+        Files.delete(getDirectory().resolve(fileName));
     }
 
     List<SharedFileItem> listFileItems() throws IOException {
