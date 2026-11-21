@@ -15,6 +15,7 @@ import ru.nsu.p2p.common.model.PeerAddress;
  *                               (Может отличаться от локального адреса, если используется NAT или проброс портов).
  * @param peerId                 Уникальный идентификатор этого клиента (например, сгенерированный UUID).
  *                               Должен сохраняться между перезапусками приложения.
+ * @param cacheDirectory         Абсолютный путь к папке на диске, куда будут сохраняться скачиваемые чанки и файлы.
  * @param connectTimeoutMs       Тайм-аут (в миллисекундах) на установку TCP-соединения с Трекером или другим пиром.
  * @param trackerReadTimeOutMs   Тайм-аут (в миллисекундах) на чтение ответа с сервера.
  * @param chunkTimeoutMs         Тайм-аут (в миллисекундах) на ожидание ответа (ChunkPayloadMessage) от пира
@@ -27,6 +28,7 @@ public record ClientSettings(
     PeerAddress trackerAddress,
     PeerAddress advertisedPeerAddress,
     String peerId,
+    Path cacheDirectory,
     int connectTimeoutMs,
     int trackerReadTimeOutMs,
     int chunkTimeoutMs,
