@@ -67,7 +67,8 @@ public class HttpRouter implements HttpRequestHandler {
     private RouteKey getRouteKey(HttpServerRequest request) {
         String method = request.method();
         String path = request.path();
-        String cleanPath = path.split("\\?")[0];
+        int queryIndex = path.indexOf('?');
+        String cleanPath = (queryIndex >= 0) ? path.substring(0, queryIndex) : path;
         return new RouteKey(method, cleanPath);
     }
 }
