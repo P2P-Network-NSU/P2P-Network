@@ -1,9 +1,8 @@
 package ru.nsu.p2p.tracker.http.handler.get_handlers;
 
+import static ru.nsu.p2p.tracker.http.handler.get_handlers.QueryParamExtractor.extractFileId;
+
 import java.io.OutputStream;
-import ru.nsu.p2p.common.error.ClientOperationException;
-import ru.nsu.p2p.common.error.ErrorCode;
-import ru.nsu.p2p.common.error.OperationError;
 import ru.nsu.p2p.common.mapper.TrackerMapper;
 import ru.nsu.p2p.common.model.PeerList;
 import ru.nsu.p2p.common.proto.tracker.PeerListResponseDto;
@@ -39,25 +38,4 @@ public class GetPeersEndpointHandler implements EndpointHandler {
         }
     }
 
-    private String extractFileId(HttpServerRequest request) {
-        String path = request.path();
-        String[] parts = path.split("\\?");
-
-        if (parts.length > 1) {
-            String query = parts[1];
-            for (String param : query.split("&")) {
-                String[] kv = param.split("=");
-                if (kv.length == 2 && kv[0].equals("fileId")) {
-                    return kv[1];
-                }
-            }
-        }
-
-        OperationError error = new OperationError(
-            ErrorCode.INVALID_ARGUMENT,
-            "Отсутствует параметр fileId в URL",
-            false
-        );
-        throw new ClientOperationException(error);
-    }
 }
