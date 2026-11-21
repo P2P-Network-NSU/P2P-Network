@@ -64,6 +64,10 @@ public class Http3TrackerServer {
     }
 
     private ServerConnector buildConnector() throws Exception {
+        SysOutLogger logger = new SysOutLogger();
+        logger.logInfo(true);
+        logger.logWarning(true);
+
         ServerConnectionConfig connectionConfig = ServerConnectionConfig.builder()
             .maxOpenPeerInitiatedBidirectionalStreams(MAX_BIDIRECT_STREAMS)
             .maxOpenPeerInitiatedUnidirectionalStreams(MAX_UNIDIRECT_STREAMS)
@@ -73,7 +77,7 @@ public class Http3TrackerServer {
             .withPort(port)
             .withKeyStore(tlsConfig.keyStore(), tlsConfig.certAlias(), tlsConfig.keyPassword())
             .withConfiguration(connectionConfig)
-            .withLogger(new SysOutLogger())
+            .withLogger(logger)
             .build();
 
         connector.registerApplicationProtocol(

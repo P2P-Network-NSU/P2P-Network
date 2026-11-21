@@ -14,7 +14,6 @@ import ru.nsu.p2p.common.client.ConnectionState;
 import ru.nsu.p2p.common.model.CatalogPage;
 import ru.nsu.p2p.common.model.CatalogQuery;
 import ru.nsu.p2p.common.model.PeerAddress;
-import ru.nsu.p2p.common.transfer.PublishRequest;
 
 class P2PClientCoreManualServerTest {
 
