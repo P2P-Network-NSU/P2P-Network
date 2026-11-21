@@ -8,15 +8,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.KeyStore;
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import tech.kwik.flupke.Http3ClientBuilder;
 
-final class Http3Transport {
+final class Http3Transport implements AutoCloseable {
 
     private final HttpClient client;
     private final Duration readTimeout;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Set<CompletableFuture<HttpResponse<byte[]>>> inFlightRequests =
+        ConcurrentHashMap.newKeySet();
 
     Http3Transport(int readTimeoutMs) {
         if (readTimeoutMs <= 0) {
@@ -28,11 +34,45 @@ final class Http3Transport {
     }
 
     public CompletableFuture<HttpResponse<byte[]>> sendAsync(HttpRequest.Builder requestBuilder) {
+        if (closed.get()) {
+            throw createInvalidStateException("Использование Http3Transport после закрытия");
+        }
+
         HttpRequest request = requestBuilder
             .timeout(readTimeout)
             .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray());
+        CompletableFuture<HttpResponse<byte[]>> future =
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray());
+
+        inFlightRequests.add(future);
+        future.whenComplete((response, error) -> inFlightRequests.remove(future));
+
+        if (closed.get()) {
+            future.cancel(true);
+            inFlightRequests.remove(future);
+        }
+
+        return future;
+    }
+
+    @Override
+    public void close() {
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+
+        for (CompletableFuture<HttpResponse<byte[]>> future : inFlightRequests) {
+            future.cancel(true);
+        }
+        inFlightRequests.clear();
+
+        try {
+            client.shutdownNow();
+            client.close();
+        } catch (Exception ignored) {
+
+        }
     }
 
     private HttpClient buildClient() {
@@ -40,9 +80,9 @@ final class Http3Transport {
             KeyStore trustStore = KeyStore.getInstance("PKCS12");
 
             try (InputStream is =
-                getClass().
-                    getClassLoader().
-                    getResourceAsStream("client-truststore.p12")
+                getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("client-truststore.p12")
             ) {
                 if (is == null) {
                     throw new RuntimeException("Файл client-truststore.p12 не найден в ресурсах");

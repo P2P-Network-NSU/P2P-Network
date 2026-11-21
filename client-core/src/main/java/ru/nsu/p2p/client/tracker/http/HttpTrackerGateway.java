@@ -177,7 +177,9 @@ public final class HttpTrackerGateway implements TrackerGateway {
 
     @Override
     public void close() {
-        closed.set(true);
+        if (closed.compareAndSet(false, true)) {
+            transport.close();
+        }
     }
 
     // --- Вспомогательные методы HTTP ---

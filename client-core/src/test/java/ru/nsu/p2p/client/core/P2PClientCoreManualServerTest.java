@@ -19,7 +19,7 @@ import ru.nsu.p2p.common.transfer.PublishRequest;
 class P2PClientCoreManualServerTest {
 
     @Test
-    //@Disabled("Ручной тест: перед запуском поднимите TrackerMain на UDP-порту 45500")
+    @Disabled("Ручной тест: перед запуском поднимите TrackerMain на UDP-порту 45500")
     void shouldRegisterOnRealTrackerServerAndSearchCatalog() throws Exception {
         ClientSettings settings = new ClientSettings(
             new PeerAddress("localhost", 45500),

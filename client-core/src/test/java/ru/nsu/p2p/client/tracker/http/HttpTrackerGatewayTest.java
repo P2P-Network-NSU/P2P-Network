@@ -7,7 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
@@ -342,6 +345,7 @@ class HttpTrackerGatewayTest {
     @Test
     void methodsShouldThrowInvalidStateAfterClose() {
         gateway.close();
+        gateway.close(); // повторный вызов не должен закрывать транспорт дважды
 
         ClientOperationException ex = assertThrows(
             ClientOperationException.class,
@@ -350,7 +354,8 @@ class HttpTrackerGatewayTest {
 
         assertEquals(ErrorCode.INVALID_STATE, ex.getError().code());
         assertFalse(ex.getError().retryable());
-        verifyNoInteractions(transport);
+        verify(transport, times(1)).close();
+        verifyNoMoreInteractions(transport);
     }
 
     // --- Вспомогательные методы теста ---
