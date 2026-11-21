@@ -33,7 +33,8 @@ class TrackerIntegrationTest {
         router.register("POST", ApiEndpoints.TRACKER_REGISTER, new RegisterEndpointHandler(service));
 
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("tracker-keystore.p12")) {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(
+            "tracker-dev-keystore.p12")) {
             keyStore.load(is, "changeit".toCharArray());
         }
         TlsConfig tlsConfig = new TlsConfig(keyStore, "tracker", "changeit".toCharArray());
@@ -51,7 +52,8 @@ class TrackerIntegrationTest {
     @Test
     void clientCanRegisterViaHttp3() throws Exception {
         KeyStore trustStore = KeyStore.getInstance("PKCS12");
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("tracker-keystore.p12")) {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(
+            "tracker-dev-keystore.p12")) {
             trustStore.load(is, "changeit".toCharArray());
         }
 

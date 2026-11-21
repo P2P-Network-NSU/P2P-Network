@@ -49,7 +49,7 @@ public final class TrackerMain {
                 new GetPeersEndpointHandler(service));
 
             char[] keyPassword = "changeit".toCharArray();
-            KeyStore keyStore = loadKeyStore("tracker-keystore.p12", keyPassword);
+            KeyStore keyStore = loadKeyStore("tracker-dev-keystore.p12", keyPassword);
             TlsConfig tlsConfig = new TlsConfig(keyStore, "tracker", keyPassword);
 
             final Http3TrackerServer server = new Http3TrackerServer(
