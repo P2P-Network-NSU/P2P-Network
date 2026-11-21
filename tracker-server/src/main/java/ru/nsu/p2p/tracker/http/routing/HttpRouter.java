@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
-import ru.nsu.p2p.tracker.http.statuses.HttpStatuses;
+import ru.nsu.p2p.common.http.HttpStatuses;
 import ru.nsu.p2p.tracker.http.handler.EndpointHandler;
 import tech.kwik.flupke.server.HttpRequestHandler;
 import tech.kwik.flupke.server.HttpServerRequest;
@@ -28,7 +28,7 @@ public class HttpRouter implements HttpRequestHandler {
             System.out.println("[HTTP/3] " + request.method() + " " + request.path());
 
             if (handler == null) {
-                response.setStatus(HttpStatuses.HTTP_NOT_FOUND_ERROR);
+                response.setStatus(HttpStatuses.HTTP_NOT_FOUND);
                 sendNoneBodyResponse(response);
                 return;
             }
@@ -38,16 +38,16 @@ public class HttpRouter implements HttpRequestHandler {
         } catch (ClientOperationException e) {
             ErrorCode errorCode = e.getError().code();
             if (errorCode == ErrorCode.INVALID_ARGUMENT) {
-                response.setStatus(HttpStatuses.HTTP_BAD_REQUEST_ERROR);
+                response.setStatus(HttpStatuses.HTTP_BAD_REQUEST);
             } else if (errorCode == ErrorCode.NOT_FOUND) {
-                response.setStatus(HttpStatuses.HTTP_NOT_FOUND_ERROR);
+                response.setStatus(HttpStatuses.HTTP_NOT_FOUND);
             } else {
                 response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
             }
             sendNoneBodyResponse(response);
 
         } catch (InvalidProtocolBufferException e) {
-            response.setStatus(HttpStatuses.HTTP_BAD_REQUEST_ERROR);
+            response.setStatus(HttpStatuses.HTTP_BAD_REQUEST);
             sendNoneBodyResponse(response);
         }
         catch (Exception e) {

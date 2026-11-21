@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import ru.nsu.p2p.common.proto.tracker.HeartbeatRequestDto;
 import ru.nsu.p2p.tracker.http.handler.EndpointHandler;
-import ru.nsu.p2p.tracker.http.statuses.HttpStatuses;
+import ru.nsu.p2p.common.http.HttpStatuses;
 import ru.nsu.p2p.tracker.service.TrackerService;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;
