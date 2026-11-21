@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.tracker;
+package ru.nsu.p2p.client.tracker.hearbeat;
 
 import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
 import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidStateException;
@@ -11,6 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import ru.nsu.p2p.client.tracker.TrackerGateway;
 
 /**
  * Класс-демон, регулярно посылающий хартбиты на сервер.

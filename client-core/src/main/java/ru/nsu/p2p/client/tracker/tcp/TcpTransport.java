@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.tracker;
+package ru.nsu.p2p.client.tracker.tcp;
 
 import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
 import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidStateException;

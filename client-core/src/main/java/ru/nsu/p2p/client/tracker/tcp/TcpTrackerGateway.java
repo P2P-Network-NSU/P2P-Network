@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.tracker;
+package ru.nsu.p2p.client.tracker.tcp;
 
 import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
 
@@ -10,6 +10,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import ru.nsu.p2p.client.tracker.TcpTransport;
+import ru.nsu.p2p.client.tracker.TrackerGateway;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
