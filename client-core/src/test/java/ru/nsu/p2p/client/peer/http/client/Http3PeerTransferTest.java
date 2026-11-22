@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.peer.http;
+package ru.nsu.p2p.client.peer.http.client;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
