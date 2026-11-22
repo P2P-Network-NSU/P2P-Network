@@ -42,10 +42,10 @@ import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
  */
 public final class Http3TrackerGateway implements TrackerGateway, AutoCloseable {
 
-    public static final int PORT_MAX = 65535;
-    public static final int PORT_MIN = 0;
-    public static final int INTERNAL_SERVER_ERROR_MIN = 500;
-    public static final int INTERNAL_SERVER_ERROR_MAX = 600;
+    private static final int PORT_MAX = 65535;
+    private static final int PORT_MIN = 0;
+    private static final int INTERNAL_SERVER_ERROR_MIN = 500;
+    private static final int INTERNAL_SERVER_ERROR_MAX = 600;
 
     private final String baseUrl;
     private final Http3TrackerTransport transport;
