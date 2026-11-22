@@ -16,7 +16,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import tech.kwik.flupke.Http3ClientBuilder;
 
-final class Http3Transport implements AutoCloseable {
+final class Http3TrackerTransport implements AutoCloseable {
 
     private final HttpClient client;
     private final Duration readTimeout;
@@ -24,7 +24,7 @@ final class Http3Transport implements AutoCloseable {
     private final Set<CompletableFuture<HttpResponse<byte[]>>> inFlightRequests =
         ConcurrentHashMap.newKeySet();
 
-    Http3Transport(int readTimeoutMs) {
+    Http3TrackerTransport(int readTimeoutMs) {
         if (readTimeoutMs <= 0) {
             throw createInvalidStateException("Таймаут чтения должен быть больше 0");
         }

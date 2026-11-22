@@ -68,7 +68,7 @@ class HttpTrackerGatewayTest {
     private static final String BASE_URL = "https://127.0.0.1:45500";
 
     @Mock
-    private Http3Transport transport;
+    private Http3TrackerTransport transport;
 
     private HttpTrackerGateway gateway;
 
@@ -326,7 +326,7 @@ class HttpTrackerGatewayTest {
         assertInvalidArgument(() -> new HttpTrackerGateway(new PeerAddress(" ", 45500), transport));
         assertInvalidArgument(() -> new HttpTrackerGateway(new PeerAddress("127.0.0.1", 0), transport));
         assertInvalidArgument(() -> new HttpTrackerGateway(new PeerAddress("127.0.0.1", 70000), transport));
-        assertInvalidArgument(() -> new HttpTrackerGateway(TRACKER_ADDRESS, (Http3Transport) null));
+        assertInvalidArgument(() -> new HttpTrackerGateway(TRACKER_ADDRESS, (Http3TrackerTransport) null));
         assertInvalidArgument(() -> new HttpTrackerGateway(TRACKER_ADDRESS, 0));
     }
 

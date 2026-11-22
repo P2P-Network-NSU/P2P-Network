@@ -38,7 +38,7 @@ import ru.nsu.p2p.common.proto.tracker.PublishFileRequestDto;
 import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
 
 /**
- * HTTP/3-реализация {@link TrackerGateway} поверх {@link Http3Transport} и Protobuf.
+ * HTTP/3-реализация {@link TrackerGateway} поверх {@link Http3TrackerTransport} и Protobuf.
  */
 public final class HttpTrackerGateway implements TrackerGateway {
 
@@ -48,7 +48,7 @@ public final class HttpTrackerGateway implements TrackerGateway {
     public static final int INTERNAL_SERVER_ERROR_MAX = 600;
 
     private final String baseUrl;
-    private final Http3Transport transport;
+    private final Http3TrackerTransport transport;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public HttpTrackerGateway(PeerAddress trackerAddress, int readTimeoutMs) {
@@ -60,10 +60,10 @@ public final class HttpTrackerGateway implements TrackerGateway {
         }
 
         this.baseUrl = buildBaseUrl(trackerAddress);
-        this.transport = new Http3Transport(readTimeoutMs);
+        this.transport = new Http3TrackerTransport(readTimeoutMs);
     }
 
-    HttpTrackerGateway(PeerAddress trackerAddress, Http3Transport transport) {
+    HttpTrackerGateway(PeerAddress trackerAddress, Http3TrackerTransport transport) {
         validateTrackerAddress(trackerAddress);
         if (transport == null) {
             throw createInvalidArgumentException(
