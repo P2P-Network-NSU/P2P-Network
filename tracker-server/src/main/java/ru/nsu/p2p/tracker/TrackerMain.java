@@ -7,15 +7,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import ru.nsu.p2p.common.http.ApiEndpoints;
-import ru.nsu.p2p.tracker.http.server.Http3TrackerServer;
-import ru.nsu.p2p.tracker.http.router.HttpRouter;
-import ru.nsu.p2p.tracker.http.server.TlsConfig;
-import ru.nsu.p2p.tracker.http.handler.post_handlers.CatalogSearchEndpointHandler;
 import ru.nsu.p2p.tracker.http.handler.get_handlers.GetManifestEndpointHandler;
 import ru.nsu.p2p.tracker.http.handler.get_handlers.GetPeersEndpointHandler;
+import ru.nsu.p2p.tracker.http.handler.post_handlers.CatalogSearchEndpointHandler;
 import ru.nsu.p2p.tracker.http.handler.post_handlers.HeartbeatEndpointHandler;
 import ru.nsu.p2p.tracker.http.handler.post_handlers.PublishEndpointHandler;
 import ru.nsu.p2p.tracker.http.handler.post_handlers.RegisterEndpointHandler;
+import ru.nsu.p2p.tracker.http.router.HttpRouter;
+import ru.nsu.p2p.tracker.http.server.Http3TrackerServer;
+import ru.nsu.p2p.tracker.http.server.TlsConfig;
 import ru.nsu.p2p.tracker.repository.CatalogRepository;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
 import ru.nsu.p2p.tracker.repository.memory.InMemoryCatalogRepository;
@@ -26,7 +26,13 @@ import ru.nsu.p2p.tracker.service.TrackerService;
 
 public final class TrackerMain {
 
+    private static final int EXIT_FAILURE = 1;
+    private static final int INITIAL_DELAY = 0;
     private static final int PORT = 45500;
+    private static final String KEYSTORE_TYPE = "PKCS12";
+    private static final String DEFAULT_KEYSTORE_RESOURCE = "tracker-dev-keystore.p12";
+    private static final String DEFAULT_KEY_ALIAS = "tracker";
+    private static final String DEFAULT_KEY_PASSWORD = "changeit";
 
     static void main(String[] args) {
         try {
@@ -48,9 +54,9 @@ public final class TrackerMain {
             router.register("GET", ApiEndpoints.TRACKER_GET_PEERS,
                 new GetPeersEndpointHandler(service));
 
-            char[] keyPassword = "changeit".toCharArray();
-            KeyStore keyStore = loadKeyStore("tracker-dev-keystore.p12", keyPassword);
-            TlsConfig tlsConfig = new TlsConfig(keyStore, "tracker", keyPassword);
+            char[] keyPassword = DEFAULT_KEY_PASSWORD.toCharArray();
+            KeyStore keyStore = loadKeyStore(DEFAULT_KEYSTORE_RESOURCE, keyPassword);
+            TlsConfig tlsConfig = new TlsConfig(keyStore, DEFAULT_KEY_ALIAS, keyPassword);
 
             final Http3TrackerServer server = new Http3TrackerServer(
                 PORT,
@@ -62,7 +68,7 @@ public final class TrackerMain {
             ScheduledExecutorService peerEvictionService = Executors.newSingleThreadScheduledExecutor();
             peerEvictionService.scheduleAtFixedRate(
                 new PeerEvictionTask(peerStorage),
-                0,
+                INITIAL_DELAY,
                 HeartBeatConstants.TIME_TO_LIVE,
                 TimeUnit.SECONDS
             );
@@ -73,13 +79,13 @@ public final class TrackerMain {
         } catch (Exception e) {
             System.err.println("Критическая ошибка при запуске Трекера: " + e.getMessage());
             e.printStackTrace();
-            System.exit(1);
+            System.exit(EXIT_FAILURE);
         }
     }
 
 
     private static KeyStore loadKeyStore(String resourceName, char[] password) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
 
         try (InputStream is = TrackerMain.class.getClassLoader()
             .getResourceAsStream(resourceName)) {

@@ -2,11 +2,10 @@ package ru.nsu.p2p.tracker.http.handler.post_handlers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import ru.nsu.p2p.common.http.HttpStatuses;
 import ru.nsu.p2p.common.mapper.TrackerMapper;
 import ru.nsu.p2p.common.proto.tracker.PublishFileRequestDto;
 import ru.nsu.p2p.tracker.http.handler.EndpointHandler;
-import ru.nsu.p2p.common.http.HttpStatuses;
 import ru.nsu.p2p.tracker.service.TrackerService;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;
@@ -30,9 +29,6 @@ public class PublishEndpointHandler implements EndpointHandler {
         );
 
         response.setStatus(HttpStatuses.HTTP_NO_CONTENT);
-        try (OutputStream _ = response.getOutputStream()) {
-
-        }
     }
 
     private PublishFileRequestDto getRequestDto(HttpServerRequest request) throws IOException {

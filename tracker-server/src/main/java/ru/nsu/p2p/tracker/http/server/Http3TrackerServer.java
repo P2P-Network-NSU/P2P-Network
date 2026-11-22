@@ -12,8 +12,10 @@ import tech.kwik.flupke.server.HttpRequestHandler;
 
 public class Http3TrackerServer {
 
-    private static final int MAX_BIDIRECT_STREAMS = 100;
-    private static final int MAX_UNIDIRECT_STREAMS = 3;
+    private static final int MAX_OPEN_BIDIRECTIONAL_STREAMS = 100;
+    private static final int MAX_OPEN_UNIDIRECTIONAL_STREAMS = 3;
+    private static final String ALPN_HTTP3 = "h3";
+
     private final int port;
     private final TlsConfig tlsConfig;
     private final HttpRequestHandler requestHandler;
@@ -69,8 +71,8 @@ public class Http3TrackerServer {
         logger.logWarning(true);
 
         ServerConnectionConfig connectionConfig = ServerConnectionConfig.builder()
-            .maxOpenPeerInitiatedBidirectionalStreams(MAX_BIDIRECT_STREAMS)
-            .maxOpenPeerInitiatedUnidirectionalStreams(MAX_UNIDIRECT_STREAMS)
+            .maxOpenPeerInitiatedBidirectionalStreams(MAX_OPEN_BIDIRECTIONAL_STREAMS)
+            .maxOpenPeerInitiatedUnidirectionalStreams(MAX_OPEN_UNIDIRECTIONAL_STREAMS)
             .build();
 
         ServerConnector connector = ServerConnector.builder()
@@ -81,7 +83,7 @@ public class Http3TrackerServer {
             .build();
 
         connector.registerApplicationProtocol(
-            "h3",
+            ALPN_HTTP3,
             new Http3ApplicationProtocolFactory(requestHandler, Collections.emptyMap(), executor)
         );
 

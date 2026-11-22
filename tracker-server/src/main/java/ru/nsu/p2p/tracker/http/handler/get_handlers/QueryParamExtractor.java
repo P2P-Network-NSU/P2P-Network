@@ -9,7 +9,8 @@ import tech.kwik.flupke.server.HttpServerRequest;
 
 final class QueryParamExtractor {
 
-    private QueryParamExtractor() {}
+    private QueryParamExtractor() {
+    }
 
     static String extractFileId(HttpServerRequest request) {
         String path = request.path();

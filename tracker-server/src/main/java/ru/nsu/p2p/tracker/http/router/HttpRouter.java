@@ -26,6 +26,7 @@ public class HttpRouter implements HttpRequestHandler {
             RouteKey routeKey = getRouteKey(request);
             EndpointHandler handler = routes.get(routeKey);
 
+            // отладочное логирование
             System.out.println("[HTTP/3] " + request.method() + " " + request.path());
 
             if (handler == null) {
@@ -37,18 +38,18 @@ public class HttpRouter implements HttpRequestHandler {
 
         } catch (ClientOperationException e) {
             ErrorCode errorCode = e.getError().code();
-            if (errorCode == ErrorCode.INVALID_ARGUMENT) {
-                response.setStatus(HttpStatuses.HTTP_BAD_REQUEST);
-            } else if (errorCode == ErrorCode.NOT_FOUND) {
-                response.setStatus(HttpStatuses.HTTP_NOT_FOUND);
-            } else {
-                response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
+            switch (errorCode) {
+                case ErrorCode.INVALID_ARGUMENT ->
+                    response.setStatus(HttpStatuses.HTTP_BAD_REQUEST);
+                case ErrorCode.NOT_FOUND ->
+                    response.setStatus(HttpStatuses.HTTP_NOT_FOUND);
+                default ->
+                    response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
             }
 
         } catch (InvalidProtocolBufferException e) {
             response.setStatus(HttpStatuses.HTTP_BAD_REQUEST);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             System.err.println("Внутренняя ошибка сервера: " + e.getMessage());
             e.printStackTrace();
             response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
