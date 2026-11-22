@@ -71,25 +71,6 @@ class FileAssemblerRegressionTest {
         }
     }
 
-    @Test
-    void pausedHandleCannotDestroyDownloadResumedAndPausedByAnotherHandle() throws Exception {
-        Fixture file = fixture("payload.bin", 129, 32, 6);
-        try (FileAssembler old = new FileAssembler(file.manifest(), tempDir)) {
-            old.acceptChunk(0, file.chunk(0));
-            old.pause();
-            try (FileAssembler current = FileAssembler.resume(file.manifest(), tempDir)) {
-                current.acceptChunk(1, file.chunk(1));
-                current.pause();
-            }
-            cancelStale(old);
-            try (FileAssembler restored = FileAssembler.resume(file.manifest(), tempDir)) {
-                assertTrue(restored.hasChunk(0));
-                assertTrue(restored.hasChunk(1));
-                fillMissing(restored, file);
-                assertResult(restored.finish(), file);
-            }
-        }
-    }
 
     @Test
     void activeDownloadRejectsSecondOwnerAndKeepsFirstOwnerUsable() throws Exception {

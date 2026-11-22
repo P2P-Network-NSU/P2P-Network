@@ -15,6 +15,9 @@ import java.util.Objects;
  */
 public final class HashUtils {
 
+    private static final int SHA256_HASH_LENGTH = 64;
+    private static final int BUFFER_SIZE = 8192;
+
     private HashUtils() {
     }
 
@@ -65,7 +68,7 @@ public final class HashUtils {
         Objects.requireNonNull(input);
 
         Sha256Hasher hasher = newSha256Hasher();
-        byte[] buffer = new byte[8192];
+        byte[] buffer = new byte[BUFFER_SIZE];
         int count;
 
         while ((count = input.read(buffer)) != -1) {
@@ -75,6 +78,10 @@ public final class HashUtils {
         return hasher.finish();
     }
 
+    private static boolean isLowerHexDigit(char c) {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+    }
+
     /**
      * Проверяет формат SHA-256: ровно 64 шестнадцатеричных символа в нижнем регистре.
      *
@@ -82,13 +89,12 @@ public final class HashUtils {
      * @return true, если строка имеет корректный формат
      */
     public static boolean isValidHash(String hash) {
-        if (hash == null || hash.length() != 64) {
+        if (hash == null || hash.length() != SHA256_HASH_LENGTH) {
             return false;
         }
 
         for (int i = 0; i < hash.length(); i++) {
-            char c = hash.charAt(i);
-            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
+            if (!isLowerHexDigit(hash.charAt(i))) {
                 return false;
             }
         }

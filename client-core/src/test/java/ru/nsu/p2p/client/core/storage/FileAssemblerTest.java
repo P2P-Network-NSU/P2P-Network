@@ -205,8 +205,8 @@ class FileAssemblerTest {
             );
         }
 
-        assertTrue(Files.exists(directory.resolve("test.txt.part")));
-        assertTrue(Files.exists(directory.resolve("test.txt.part.state")));
+        assertTrue(Files.exists(directory.resolve(MANIFEST.fileId() + ".part")));
+        assertTrue(Files.exists(directory.resolve(MANIFEST.fileId() + ".state")));
     }
 
     @Test
@@ -274,7 +274,7 @@ class FileAssemblerTest {
         }
 
         // Повреждаем первый чанк непосредственно в .part.
-        Path tempFile = directory.resolve("test.txt.part");
+        Path tempFile = directory.resolve(MANIFEST.fileId() + ".part");
 
         try (FileChannel channel = FileChannel.open(
                 tempFile,
@@ -314,7 +314,7 @@ class FileAssemblerTest {
             assembler.pause();
         }
 
-        Path stateFile = directory.resolve("test.txt.part.state");
+        Path stateFile = directory.resolve(MANIFEST.fileId() + ".state");
         Files.write(stateFile, new byte[]{0, 1, 2, 3});
 
         assertThrows(IOException.class, () -> {
@@ -450,8 +450,8 @@ class FileAssemblerTest {
         assertFalse(Files.exists(directory.resolve("test.txt")));
 
         // Временные данные остаются для диагностики или повторной попытки.
-        assertTrue(Files.exists(directory.resolve("test.txt.part")));
-        assertTrue(Files.exists(directory.resolve("test.txt.part.state")));
+        assertTrue(Files.exists(directory.resolve(incorrectManifest.fileId() + ".part")));
+        assertTrue(Files.exists(directory.resolve(incorrectManifest.fileId() + ".state")));
     }
 
 }

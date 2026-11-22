@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -33,13 +34,17 @@ public final class FileAssembler implements AutoCloseable {
     private final Path targetPath;
     private final Path tempPath;
     private final Path statePath;
+    private final Path lockPath;
     private final FileChannel channel;
+    private FileChannel lockChannel;
+    private FileLock fileLock;
     private final List<String> chunkHashes;
     private final BitSet received;
     private final int chunkSizeBytes;
 
     private boolean closed;
     private boolean completed;
+    private boolean cancelled;
 
     /**
      * Создаёт новый сборщик.
@@ -86,13 +91,39 @@ public final class FileAssembler implements AutoCloseable {
             throw new IllegalArgumentException("Invalid file name");
         }
 
-        tempPath = directory.resolve(name + ".part");
-        statePath = directory.resolve(name + ".part.state");
+        String downloadId = manifest.fileId();
+        tempPath = directory.resolve(downloadId + ".part");
+        statePath = directory.resolve(downloadId + ".state");
 
+        lockPath = directory.resolve(downloadId + ".lock");
+
+        FileChannel openedLockChannel = FileChannel.open(
+                lockPath,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE
+        );
+
+        FileLock acquiredLock;
+
+        try {
+            acquiredLock = openedLockChannel.tryLock();
+        } catch (java.nio.channels.OverlappingFileLockException e) {
+            openedLockChannel.close();
+            throw new IOException("Download is already in use", e);
+        }
+
+        if (acquiredLock == null) {
+            openedLockChannel.close();
+            throw new IOException("Download is already in use");
+        }
+
+        this.lockChannel = openedLockChannel;
+        this.fileLock = acquiredLock;
+
+        try {
         if (Files.exists(targetPath)) {
             throw new FileAlreadyExistsException(targetPath.toString());
         }
-
         if (resume) {
             if (!Files.isRegularFile(tempPath)
                     || !Files.isRegularFile(statePath)) {
@@ -154,6 +185,21 @@ public final class FileAssembler implements AutoCloseable {
                 Files.deleteIfExists(tempPath);
                 throw e;
             }
+        }
+        } catch (IOException | RuntimeException e) {
+            try {
+                fileLock.release();
+            } catch (IOException releaseError) {
+                e.addSuppressed(releaseError);
+            }
+
+            try {
+                lockChannel.close();
+            } catch (IOException closeError) {
+                e.addSuppressed(closeError);
+            }
+
+            throw e;
         }
     }
 
@@ -464,6 +510,32 @@ public final class FileAssembler implements AutoCloseable {
 
         closed = true;
 
+        try {
+            if (fileLock != null && fileLock.isValid()) {
+                fileLock.release();
+            }
+            fileLock = null;
+        } catch (IOException e) {
+            if (error == null) {
+                error = e;
+            } else {
+                error.addSuppressed(e);
+            }
+        }
+
+        try {
+            if (lockChannel != null && lockChannel.isOpen()) {
+                lockChannel.close();
+            }
+            lockChannel = null;
+        } catch (IOException e) {
+            if (error == null) {
+                error = e;
+            } else {
+                error.addSuppressed(e);
+            }
+        }
+
         if (error != null) {
             throw error;
         }
@@ -482,6 +554,7 @@ public final class FileAssembler implements AutoCloseable {
             );
         }
 
+        try {
         IOException error = null;
 
         try {
@@ -521,17 +594,45 @@ public final class FileAssembler implements AutoCloseable {
         Files.deleteIfExists(statePath);
 
         return targetPath;
+        } finally {
+            releaseLock();
+        }
     }
 
     /**
      * Отменяет загрузку и удаляет временные данные.
      */
     public synchronized void cancel() throws IOException {
-        if (completed) {
+        if (completed || cancelled) {
             return;
         }
 
         IOException error = null;
+
+        // Если загрузка была приостановлена, пробуем снова получить блокировку.
+        if (fileLock == null) {
+            if (lockChannel == null || !lockChannel.isOpen()) {
+                lockChannel = FileChannel.open(
+                        lockPath,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.WRITE
+                );
+            }
+
+            try {
+                fileLock = lockChannel.tryLock();
+            } catch (java.nio.channels.OverlappingFileLockException e) {
+                fileLock = null;
+            }
+        }
+
+        // Другой экземпляр владеет загрузкой — его файлы не трогаем.
+        if (fileLock == null) {
+            closed = true;
+            cancelled = true;
+            lockChannel.close();
+            return;
+        }
 
         if (channel.isOpen()) {
             try {
@@ -542,10 +643,33 @@ public final class FileAssembler implements AutoCloseable {
         }
 
         closed = true;
+        cancelled = true;
 
         try {
             Files.deleteIfExists(tempPath);
             Files.deleteIfExists(statePath);
+        } catch (IOException e) {
+            if (error == null) {
+                error = e;
+            } else {
+                error.addSuppressed(e);
+            }
+        }
+
+        try {
+            fileLock.release();
+        } catch (IOException e) {
+            if (error == null) {
+                error = e;
+            } else {
+                error.addSuppressed(e);
+            }
+        }
+
+        fileLock = null;
+
+        try {
+            lockChannel.close();
         } catch (IOException e) {
             if (error == null) {
                 error = e;
@@ -565,6 +689,37 @@ public final class FileAssembler implements AutoCloseable {
     @Override
     public void close() throws IOException {
         pause();
+    }
+
+    private void releaseLock() throws IOException {
+        IOException error = null;
+
+        if (fileLock != null) {
+            try {
+                fileLock.release();
+            } catch (IOException e) {
+                error = e;
+            }
+            fileLock = null;
+        }
+
+        if (lockChannel != null && lockChannel.isOpen()) {
+            try {
+                lockChannel.close();
+            } catch (IOException e) {
+                if (error == null) {
+                    error = e;
+                } else {
+                    error.addSuppressed(e);
+                }
+            }
+        }
+
+        lockChannel = null;
+
+        if (error != null) {
+            throw error;
+        }
     }
 
     private void ensureOpen() {
