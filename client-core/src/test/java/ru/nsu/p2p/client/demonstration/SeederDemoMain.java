@@ -12,52 +12,30 @@ import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.model.PeerAddress;
 
 public final class SeederDemoMain {
-
-    private static final int PORT = 6881;
-    private static final long CHUNK_SIZE_BYTES = 256 * 1024L; // 256 КБ
-    private static final String FILE_ID = "demo-file-1";
-
-    // Путь к реальному файлу на ПК 1
-    private static final String DEFAULT_FILE_PATH = "/home/drakonokot/Видео/palm-arch-paradise.3840x2160.mp4";
-
     public static void main(String[] args) throws Exception {
-        Path filePath = Path.of(args.length > 0 ? args[0] : DEFAULT_FILE_PATH);
-        if (!Files.isRegularFile(filePath)) {
-            System.err.println("Файл не найден: " + filePath.toAbsolutePath());
-            return;
-        }
-
-        FileManifest manifest = LocalDiskSharedFileProvider.buildManifest(
-            filePath,
-            FILE_ID,
-            CHUNK_SIZE_BYTES,
-            "application/octet-stream"
-        );
+        Path sharedDir = Path.of(System.getProperty("user.home"), ".p2p-client-NSU", "shared");
+        Files.createDirectories(sharedDir);
 
         LocalDiskSharedFileProvider provider = new LocalDiskSharedFileProvider();
-        provider.addFile(new SharedFile(
-            manifest,
-            filePath,
-            filePath.getFileName().toString(),
-            "P2P demo transfer"
-        ));
+        try (var files = Files.list(sharedDir)) {
+            for (Path filePath : files.filter(Files::isRegularFile).toList()) {
+                String fileName = filePath.getFileName().toString();
+                FileManifest manifest = LocalDiskSharedFileProvider.buildManifest(
+                    filePath,
+                    fileName, // <-- fileId совпадает с fileName, который передаст UI
+                    256 * 1024L,
+                    "application/octet-stream"
+                );
+                provider.addFile(new SharedFile(manifest, filePath, fileName, "Shared file"));
+                System.out.println("Доступен для скачивания: " + fileName
+                    + " (" + manifest.sizeBytes() + " байт)");
+            }
+        }
 
-        Http3PeerServer server = new Http3PeerServer(new PeerAddress("0.0.0.0", PORT), provider);
+        Http3PeerServer server = new Http3PeerServer(new PeerAddress("0.0.0.0", 6881), provider);
         server.start().toCompletableFuture().join();
 
         Runtime.getRuntime().addShutdownHook(new Thread(server::close));
-
-        String realSha256 = computeFileSha256(filePath);
-
-        System.out.println("=== HTTP/3 Seeder запущен ===");
-        System.out.println("UDP порт   : " + PORT);
-        System.out.println("FILE_ID    : " + manifest.fileId());
-        System.out.println("FILE_NAME  : " + manifest.originalName());
-        System.out.println("FILE_SIZE  : " + manifest.sizeBytes());
-        System.out.println("CHUNK_SIZE : " + manifest.chunkSizeBytes());
-        System.out.println("CHUNKS     : " + manifest.chunkHashes().size());
-        System.out.println("SHA-256    : " + realSha256);
-        System.out.println("Ожидание подключений...");
 
         Thread.currentThread().join();
     }
