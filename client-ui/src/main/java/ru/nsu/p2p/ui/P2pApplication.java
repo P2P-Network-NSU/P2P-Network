@@ -18,11 +18,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javafx.scene.control.Alert;
+import ru.nsu.p2p.common.api.ClientLifecycle;
+import ru.nsu.p2p.common.api.PeerDownloadApi;
+import ru.nsu.p2p.common.client.ClientSettings;
 import ru.nsu.p2p.common.client.ClientStatusSnapshot;
 import ru.nsu.p2p.common.client.ConnectionState;
 
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
@@ -32,6 +36,7 @@ import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
 import javafx.scene.Parent;
 
+import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.ui.files.MyFilesView;
 import ru.nsu.p2p.ui.catalog.CatalogView;
 import ru.nsu.p2p.ui.downloads.DownloadsView;
@@ -76,6 +81,9 @@ public final class P2pApplication extends Application {
     private final ExecutorService fileExecutor =
             Executors.newSingleThreadExecutor();
 
+    private ClientSettings settings;
+    private ClientLifecycle lifecycle;
+
     // КОД ДЛЯ ТЕСТА -----
     private static CompletionStage<ClientStatusSnapshot> getTestStatus() {
         return CompletableFuture.completedFuture(
@@ -91,14 +99,6 @@ public final class P2pApplication extends Application {
         );
     }
     // FLAG_CHECK_LATER ---
-
-//    final ClientSettings settings = new ClientSettings(
-//            new PeerAddress("localhost", 666),
-//            new PeerAddress("localhost", 67),
-//            UUID.randomUUID().toString(),
-//
-//    );
-//    final ClientLifecycle lifecycle = null;
 
     @Override
     public void start(Stage stage) {
@@ -123,6 +123,29 @@ public final class P2pApplication extends Application {
 
         SharedFilesService sharedFilesService = new SharedFilesService(directories.shared());
 
+        var args = getParameters().getNamed();
+
+        PeerAddress trackerAddress = new PeerAddress(
+                args.getOrDefault("trackerHost", "localhost"),
+                Integer.parseInt(args.getOrDefault("trackerPort", "45500"))
+        );
+
+        PeerAddress myAddress = new PeerAddress(
+                args.getOrDefault("peerHost", "localhost"),
+                Integer.parseInt(args.getOrDefault("peerPort", "45501"))
+        );
+
+        settings = new ClientSettings(
+                trackerAddress,
+                myAddress,
+                UUID.randomUUID().toString(),
+                directories.temp(),
+                5_000,
+                5_000,
+                5_000,
+                10
+                );
+        //lifecycle.start(settings);
 
         // Главное окно
         BorderPane root = new BorderPane();
@@ -131,7 +154,12 @@ public final class P2pApplication extends Application {
         Parent catalogNetworkView = new CatalogView().getView();
 
         // Окно с загрузками
-        Parent downloadsView = new DownloadsView().getView();
+        PeerDownloadApi downloadApi = (peer, fileName, directory) ->
+                CompletableFuture.failedFuture(
+                        new IllegalStateException("Ядро загрузок пока не подключено")
+                );
+
+        Parent downloadsView = new DownloadsView(downloadApi, directories.downloads()).getView();
 
         // Окно с файлами пользователя
         MyFilesView myFilesScreen =
@@ -360,7 +388,8 @@ public final class P2pApplication extends Application {
         trackerStatusDot = new Circle(TRACKER_DOT_RADIUS);
         trackerStatusDot.getStyleClass().add("tracker-dot");
 
-        ipAddressLabel = new Label("Мой адрес:");
+        PeerAddress myAddress = settings.advertisedPeerAddress();
+        ipAddressLabel = new Label("Мой адрес: " + myAddress.host() + ":" + myAddress.port());
 
         downloadSpeedLabel = new Label();
         uploadSpeedLabel = new Label();
