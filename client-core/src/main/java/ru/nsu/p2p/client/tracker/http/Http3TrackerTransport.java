@@ -33,7 +33,7 @@ final class Http3TrackerTransport implements AutoCloseable {
         this.client = buildClient();
     }
 
-    public CompletableFuture<HttpResponse<byte[]>> sendAsync(HttpRequest.Builder requestBuilder) {
+    CompletableFuture<HttpResponse<byte[]>> sendAsync(HttpRequest.Builder requestBuilder) {
         if (closed.get()) {
             throw createInvalidStateException("Использование Http3Transport после закрытия");
         }
