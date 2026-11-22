@@ -109,8 +109,7 @@ public final class P2pApplication extends Application {
                     readPort(args.getOrDefault("peerPort", "45501"), "peerPort")
             );
 
-            Path clientDirectory = Path.of(System.getProperty("user.home"))
-                    .resolve(args.getOrDefault("clientDir", ".p2p-client-NSU"));
+            Path clientDirectory = Path.of(System.getProperty("user.home"), ".p2p-client-NSU");
 
             directories = prepareDirectories(clientDirectory);
             String peerId = loadOrCreatePeerId(directories.settings());
