@@ -15,27 +15,31 @@ import javafx.stage.Stage;
 import java.io.InputStream;
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.nio.file.*;
+
 import javafx.scene.control.Alert;
+import ru.nsu.p2p.common.api.ClientLifecycle;
+import ru.nsu.p2p.common.api.PeerDownloadApi;
+import ru.nsu.p2p.common.client.ClientSettings;
 import ru.nsu.p2p.common.client.ClientStatusSnapshot;
 import ru.nsu.p2p.common.client.ConnectionState;
 
-import java.nio.file.FileAlreadyExistsException;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import ru.nsu.p2p.ui.files.SharedFilesService;
-
 import static ru.nsu.p2p.ui.icons.SvgIconLoader.createIcon;
 
 import javafx.scene.Parent;
 
+import ru.nsu.p2p.common.model.PeerAddress;
 import ru.nsu.p2p.ui.files.MyFilesView;
 import ru.nsu.p2p.ui.catalog.CatalogView;
 import ru.nsu.p2p.ui.downloads.DownloadsView;
+import ru.nsu.p2p.ui.files.SharedFilesService;
 import ru.nsu.p2p.ui.format.DataSizeFormatters;
 import ru.nsu.p2p.ui.settings.SettingsView;
 import ru.nsu.p2p.ui.stream.StreamView;
@@ -62,42 +66,65 @@ public final class P2pApplication extends Application {
     private static final double FONT_LOAD_SIZE = 14;
     private static final double TRACKER_DOT_RADIUS = 5;
 
-    public static void launchUi(String[] args) {
+    private static ClientLifecycle lifecycle;
+    private static PeerDownloadApi downloadApi;
+
+    public static void launchUi(
+            String[] args, ClientLifecycle lifecycle, PeerDownloadApi downloadApi
+    ) {
+        P2pApplication.lifecycle = lifecycle;
+        P2pApplication.downloadApi = downloadApi;
         Application.launch(P2pApplication.class, args);
     }
 
     private Label trackerStatusLabel;
     private Circle trackerStatusDot;
+    private Label ipAddressLabel;
     private Label downloadSpeedLabel;
     private Label uploadSpeedLabel;
 
     private final ExecutorService fileExecutor =
             Executors.newSingleThreadExecutor();
 
-    // КОД ДЛЯ ТЕСТА -----
-    private static CompletionStage<ClientStatusSnapshot> getTestStatus() {
-        return CompletableFuture.completedFuture(
-                new ClientStatusSnapshot(
-                        0,
-                        //ConnectionState.STOPPED,
-                        //ConnectionState.CONNECTING,
-                        ConnectionState.ONLINE,
-                        //ConnectionState.OFFLINE,
-                        false,
-                        null
-                )
-        );
-    }
-    // FLAG_CHECK_LATER ---
+    private ClientSettings settings;
 
     @Override
     public void start(Stage stage) {
+        //lifecycle.start(settings);
+
         System.setProperty("prism.lcdtext", "false");
         loadFont("/fonts/Nunito-Regular.ttf");
         loadFont("/fonts/Nunito-Bold.ttf");
 
-        SharedFilesService sharedFilesService = prepareSharedFiles(stage);
-        if (sharedFilesService == null) return;
+        var args = getParameters().getNamed();
+        ClientDirectories directories;
+
+        try {
+            PeerAddress trackerAddress = new PeerAddress(
+                    args.getOrDefault("trackerHost", "localhost"),
+                    readPort(args.getOrDefault("trackerPort", "45500"), "trackerPort")
+            );
+            PeerAddress myAddress = new PeerAddress(
+                    args.getOrDefault("peerHost", "localhost"),
+                    readPort(args.getOrDefault("peerPort", "45501"), "peerPort")
+            );
+
+            Path clientDirectory = Path.of(System.getProperty("user.home"), ".p2p-client-NSU");
+
+            directories = prepareDirectories(clientDirectory);
+            String peerId = loadOrCreatePeerId(directories.settings());
+
+            settings = new ClientSettings(
+                    trackerAddress, myAddress, peerId, directories.temp(),
+                    5_000, 5_000, 5_000, 10
+            );
+        } catch (IOException | IllegalArgumentException error) {
+            showStartupError(stage, error.getMessage());
+            return;
+        }
+
+        SharedFilesService sharedFilesService = new SharedFilesService(directories.shared());
+        //lifecycle.start(settings);
 
         // Главное окно
         BorderPane root = new BorderPane();
@@ -105,8 +132,7 @@ public final class P2pApplication extends Application {
         // Окно с каталогом сети
         Parent catalogNetworkView = new CatalogView().getView();
 
-        // Окно с загрузками
-        Parent downloadsView = new DownloadsView().getView();
+        Parent downloadsView = new DownloadsView(downloadApi, directories.downloads()).getView();
 
         // Окно с файлами пользователя
         MyFilesView myFilesScreen =
@@ -167,40 +193,80 @@ public final class P2pApplication extends Application {
 
         // Показ окна
         stage.show();
+
+        showTrackerStatus(ConnectionState.CONNECTING);
+
+        try {
+            lifecycle.start(settings)
+                    .thenCompose(ignored -> lifecycle.getStatus())
+                    .whenCompleteAsync((snapshot, error) -> {
+                        if (error == null) {
+                            showTrackerStatus(snapshot.trackerConnectionState());
+                        } else {
+                            showTrackerStatus(ConnectionState.OFFLINE);
+                            System.err.println("Ошибка запуска ядра: " + error.getMessage());
+                        }
+                    }, Platform::runLater);
+        } catch (RuntimeException error) {
+            showTrackerStatus(ConnectionState.OFFLINE);
+            System.err.println("Ошибка запуска ядра: " + error.getMessage());
+        }
     }
 
     @Override
     public void stop() {
-        fileExecutor.shutdown();
+        try {
+            lifecycle.shutdown();
+        } finally {
+            fileExecutor.shutdown();
+        }
     }
 
-    private static SharedFilesService prepareSharedFiles(Stage stage) {
-        Path directory = Path.of(
-                System.getProperty("user.home"),
-                ".p2p-client-NSU",
-                "shared"
-        );
-        SharedFilesService service = new SharedFilesService(directory);
+    private record ClientDirectories(Path shared, Path downloads, Path settings, Path temp) {}
 
-        String message;
+    private static ClientDirectories prepareDirectories(Path clientDirectory) throws IOException {
+        return new ClientDirectories(
+                Files.createDirectories(clientDirectory.resolve("shared")),
+                Files.createDirectories(clientDirectory.resolve("downloads")),
+                Files.createDirectories(clientDirectory.resolve("settings")),
+                Files.createDirectories(clientDirectory.resolve("temp"))
+        );
+    }
+
+    private static int readPort(String value, String argumentName) {
         try {
-            service.createSharedDirectory();
-            return service;
-        } catch (FileAlreadyExistsException e) {
-            message = "Путь уже занят: " + e.getFile()
-                    + "\nПереименуйте или переместите мешающий файл "
-                    + "и запустите приложение снова.";
-        } catch (IOException e) {
-            message = "Проверьте путь и права доступа для папки:\n" + e.getMessage();
+            int port = Integer.parseInt(value);
+            if (port >= 1 && port <= 65535) {
+                return port;
+            }
+        } catch (NumberFormatException ignored) {
+            // Для текста и числа вне диапазона показываем одну подсказку.
         }
 
+        throw new IllegalArgumentException(
+                "--" + argumentName + " должен быть целым числом от 1 до 65535"
+        );
+    }
+
+    private static String loadOrCreatePeerId(Path settingsDirectory) throws IOException {
+        Path idFile = settingsDirectory.resolve("peer-id.txt");
+
+        try {
+            return UUID.fromString(Files.readString(idFile).strip()).toString();
+        } catch (NoSuchFileException ignored) {
+            String peerId = UUID.randomUUID().toString();
+            Files.writeString(idFile, peerId, StandardOpenOption.CREATE_NEW);
+            return peerId;
+        }
+    }
+
+    private void showStartupError(Stage stage, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.initOwner(stage);
         alert.setTitle("Ошибка запуска");
         alert.setHeaderText("Не удалось создать папку раздач");
         alert.setContentText(message);
         alert.showAndWait();
-        return null;
     }
 
     private static Parent createLeftMenuWithButtons(
@@ -268,24 +334,19 @@ public final class P2pApplication extends Application {
         );
     }
 
-    private void updateTrackerStatus() {
-        // FLAG_CHECK_LATER: получать реальный статус из ядра.
-        getTestStatus().thenAccept(snapshot -> {
-            ConnectionState status = snapshot.trackerConnectionState();
-
-            Platform.runLater(() -> {
-                trackerStatusLabel.setText(switch (status) {
-                    case CONNECTING -> "Подключение...";
-                    case ONLINE -> "Подключён";
-                    case OFFLINE -> "Нет соединения";
-                    case STOPPED -> "Клиент остановлен";
-                });
-
-                trackerStatusDot.getStyleClass().setAll(
-                        "tracker-dot",
-                        "tracker-dot-" + status.name().toLowerCase(Locale.ROOT)
-                );
+    private void showTrackerStatus(ConnectionState status) {
+        Platform.runLater(() -> {
+            trackerStatusLabel.setText(switch (status) {
+                case CONNECTING -> "Подключение...";
+                case ONLINE -> "Подключён";
+                case OFFLINE -> "Нет соединения";
+                case STOPPED -> "Клиент остановлен";
             });
+
+            trackerStatusDot.getStyleClass().setAll(
+                    "tracker-dot",
+                    "tracker-dot-" + status.name().toLowerCase(Locale.ROOT)
+            );
         });
     }
 
@@ -317,6 +378,9 @@ public final class P2pApplication extends Application {
         trackerStatusDot = new Circle(TRACKER_DOT_RADIUS);
         trackerStatusDot.getStyleClass().add("tracker-dot");
 
+        PeerAddress myAddress = settings.advertisedPeerAddress();
+        ipAddressLabel = new Label("Мой адрес: " + myAddress.host() + ":" + myAddress.port());
+
         downloadSpeedLabel = new Label();
         uploadSpeedLabel = new Label();
 
@@ -328,6 +392,8 @@ public final class P2pApplication extends Application {
                 new Label("Трекер:"),
                 trackerStatusLabel,
                 new Separator(Orientation.VERTICAL),
+                ipAddressLabel,
+                new Separator(Orientation.VERTICAL),
                 spacer,
                 new Separator(Orientation.VERTICAL),
                 downloadSpeedLabel,
@@ -336,7 +402,6 @@ public final class P2pApplication extends Application {
         );
         statusBar.getStyleClass().add("tracker-status");
 
-        updateTrackerStatus();
         // FLAG_CHECK_LATER: получать реальные скорости из ядра.
         updateTransferSpeeds(1_234_567, 67);
 
