@@ -81,6 +81,32 @@ public final class Http3PeerServer implements PeerServerControl, AutoCloseable {
         );
     }
 
+    private static KeyStore loadKeyStore(String resourceName, char[] password) throws Exception {
+        KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
+        try (InputStream is = Http3PeerServer.class.getClassLoader()
+            .getResourceAsStream(resourceName)) {
+            if (is == null) {
+                throw new FileNotFoundException(
+                    "Файл сертификата пира не найден в ресурсах: " + resourceName
+                );
+            }
+            keyStore.load(is, password);
+        }
+        return keyStore;
+    }
+
+    private static void validateAddress(PeerAddress address) {
+        if (address == null) {
+            throw createInvalidArgumentException("PeerAddress не может быть null");
+        }
+        if (address.host() == null || address.host().isBlank()) {
+            throw createInvalidArgumentException("Хост PeerAddress не может быть пустым");
+        }
+        if (address.port() < MIN_PORT || address.port() > MAX_PORT) {
+            throw createInvalidArgumentException("Некорректный порт пира: " + address.port());
+        }
+    }
+
     @Override
     public CompletionStage<Void> start() {
         synchronized (lifecycleLock) {
@@ -91,29 +117,7 @@ public final class Http3PeerServer implements PeerServerControl, AutoCloseable {
             }
 
             try {
-                KeyStore keyStore = loadKeyStore(
-                    DEFAULT_KEYSTORE_RESOURCE,
-                    DEFAULT_KEY_PASSWORD.toCharArray()
-                );
-
-                ServerConnectionConfig connectionConfig = ServerConnectionConfig.builder()
-                    .maxIdleTimeoutInSeconds(MAX_IDLE_TIMEOUT_SECONDS)
-                    .maxOpenPeerInitiatedUnidirectionalStreams(MAX_OPEN_UNIDIRECTIONAL_STREAMS)
-                    .maxOpenPeerInitiatedBidirectionalStreams(MAX_OPEN_BIDIRECTIONAL_STREAMS)
-                    .maxUnidirectionalStreamBufferSize(UNIDIRECTIONAL_STREAM_BUFFER_BYTES)
-                    .maxBidirectionalStreamBufferSize(BIDIRECTIONAL_STREAM_BUFFER_BYTES)
-                    .maxConnectionBufferSize(CONNECTION_BUFFER_BYTES)
-                    .build();
-
-                SysOutLogger logger = new SysOutLogger();
-                logger.logWarning(true);
-
-                ServerConnector connector = ServerConnector.builder()
-                    .withPort(address.port())
-                    .withKeyStore(keyStore, DEFAULT_KEY_ALIAS, DEFAULT_KEY_PASSWORD.toCharArray())
-                    .withConfiguration(connectionConfig)
-                    .withLogger(logger)
-                    .build();
+                ServerConnector connector = getServerConnector();
 
                 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
                 connector.registerApplicationProtocol(
@@ -126,18 +130,44 @@ public final class Http3PeerServer implements PeerServerControl, AutoCloseable {
                 this.requestExecutor = executor;
                 this.running = true;
                 return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
+            } catch (Exception exception) {
                 return CompletableFuture.failedFuture(new ClientOperationException(
                     new OperationError(
                         ErrorCode.IO_ERROR,
                         "Не удалось запустить HTTP/3 P2P-сервер на порту "
-                            + address.port() + ": " + e.getMessage(),
+                            + address.port() + ": " + exception.getMessage(),
                         false
                     ),
-                    e
+                    exception
                 ));
             }
         }
+    }
+
+    private ServerConnector getServerConnector() throws Exception {
+        KeyStore keyStore = loadKeyStore(
+            DEFAULT_KEYSTORE_RESOURCE,
+            DEFAULT_KEY_PASSWORD.toCharArray()
+        );
+
+        ServerConnectionConfig connectionConfig = ServerConnectionConfig.builder()
+            .maxIdleTimeoutInSeconds(MAX_IDLE_TIMEOUT_SECONDS)
+            .maxOpenPeerInitiatedUnidirectionalStreams(MAX_OPEN_UNIDIRECTIONAL_STREAMS)
+            .maxOpenPeerInitiatedBidirectionalStreams(MAX_OPEN_BIDIRECTIONAL_STREAMS)
+            .maxUnidirectionalStreamBufferSize(UNIDIRECTIONAL_STREAM_BUFFER_BYTES)
+            .maxBidirectionalStreamBufferSize(BIDIRECTIONAL_STREAM_BUFFER_BYTES)
+            .maxConnectionBufferSize(CONNECTION_BUFFER_BYTES)
+            .build();
+
+        SysOutLogger logger = new SysOutLogger();
+        logger.logWarning(true);
+
+        return ServerConnector.builder()
+            .withPort(address.port())
+            .withKeyStore(keyStore, DEFAULT_KEY_ALIAS, DEFAULT_KEY_PASSWORD.toCharArray())
+            .withConfiguration(connectionConfig)
+            .withLogger(logger)
+            .build();
     }
 
     @Override
@@ -178,31 +208,5 @@ public final class Http3PeerServer implements PeerServerControl, AutoCloseable {
     @Override
     public void close() {
         stop().toCompletableFuture().join();
-    }
-
-    private static KeyStore loadKeyStore(String resourceName, char[] password) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
-        try (InputStream is = Http3PeerServer.class.getClassLoader()
-            .getResourceAsStream(resourceName)) {
-            if (is == null) {
-                throw new FileNotFoundException(
-                    "Файл сертификата пира не найден в ресурсах: " + resourceName
-                );
-            }
-            keyStore.load(is, password);
-        }
-        return keyStore;
-    }
-
-    private static void validateAddress(PeerAddress address) {
-        if (address == null) {
-            throw createInvalidArgumentException("PeerAddress не может быть null");
-        }
-        if (address.host() == null || address.host().isBlank()) {
-            throw createInvalidArgumentException("Хост PeerAddress не может быть пустым");
-        }
-        if (address.port() < MIN_PORT || address.port() > MAX_PORT) {
-            throw createInvalidArgumentException("Некорректный порт пира: " + address.port());
-        }
     }
 }

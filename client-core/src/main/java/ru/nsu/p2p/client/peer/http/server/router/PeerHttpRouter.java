@@ -28,8 +28,26 @@ public final class PeerHttpRouter implements HttpRequestHandler {
         this.concurrencyLimiter = new Semaphore(maxConcurrentRequests);
     }
 
+    private static String extractRoutePath(String fullPath) {
+        if (fullPath == null) {
+            return "";
+        }
+        int queryIndex = fullPath.indexOf('?');
+        return queryIndex >= 0 ? fullPath.substring(0, queryIndex) : fullPath;
+    }
+
+    private static int mapErrorCodeToStatus(ClientOperationException e) {
+        return switch (e.getError().code()) {
+            case INVALID_ARGUMENT -> HttpStatuses.HTTP_BAD_REQUEST;
+            case NOT_FOUND -> HttpStatuses.HTTP_NOT_FOUND;
+            case SOURCE_UNAVAILABLE -> HttpStatuses.HTTP_SERVICE_UNAVAILABLE;
+            default -> HttpStatuses.HTTP_INTERNAL_SERVER_ERROR;
+        };
+    }
+
     public void register(String method, String path, PeerEndpointHandler handler) {
-        if (method == null || method.isBlank() || path == null || path.isBlank() || handler == null) {
+        if (method == null || method.isBlank() || path == null || path.isBlank()
+            || handler == null) {
             throw createInvalidArgumentException("Некорректные аргументы регистрации маршрута");
         }
         routes.put(new RouteKey(method, path), handler);
@@ -37,8 +55,7 @@ public final class PeerHttpRouter implements HttpRequestHandler {
 
     @Override
     public void handleRequest(HttpServerRequest request, HttpServerResponse response)
-        throws IOException
-    {
+        throws IOException {
         if (!concurrencyLimiter.tryAcquire()) {
             response.setStatus(HttpStatuses.HTTP_SERVICE_UNAVAILABLE);
             return;
@@ -67,24 +84,8 @@ public final class PeerHttpRouter implements HttpRequestHandler {
         }
     }
 
-    private static String extractRoutePath(String fullPath) {
-        if (fullPath == null) {
-            return "";
-        }
-        int queryIndex = fullPath.indexOf('?');
-        return queryIndex >= 0 ? fullPath.substring(0, queryIndex) : fullPath;
-    }
-
-    private static int mapErrorCodeToStatus(ClientOperationException e) {
-        return switch (e.getError().code()) {
-            case INVALID_ARGUMENT -> HttpStatuses.HTTP_BAD_REQUEST;
-            case NOT_FOUND -> HttpStatuses.HTTP_NOT_FOUND;
-            case SOURCE_UNAVAILABLE -> HttpStatuses.HTTP_SERVICE_UNAVAILABLE;
-            default -> HttpStatuses.HTTP_INTERNAL_SERVER_ERROR;
-        };
-    }
-
     private record RouteKey(String method, String path) {
+
         public RouteKey {
             method = method.toUpperCase(Locale.ROOT);
         }

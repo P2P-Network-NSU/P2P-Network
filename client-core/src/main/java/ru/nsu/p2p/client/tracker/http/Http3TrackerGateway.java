@@ -43,7 +43,7 @@ import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
 public final class Http3TrackerGateway implements TrackerGateway, AutoCloseable {
 
     private static final int PORT_MAX = 65535;
-    private static final int PORT_MIN = 0;
+    private static final int PORT_MIN = 1;
     private static final int INTERNAL_SERVER_ERROR_MIN = 500;
     private static final int INTERNAL_SERVER_ERROR_MAX = 600;
 
@@ -73,6 +73,123 @@ public final class Http3TrackerGateway implements TrackerGateway, AutoCloseable 
 
         this.baseUrl = buildBaseUrl(trackerAddress);
         this.transport = transport;
+    }
+
+    private static ClientOperationException mapHttpStatusError(int statusCode, URI uri) {
+        return switch (statusCode) {
+            case HttpStatuses.HTTP_BAD_REQUEST -> new ClientOperationException(new OperationError(
+                ErrorCode.INVALID_ARGUMENT,
+                "Трекер отклонил запрос (HTTP 400): " + uri,
+                false
+            ));
+            case HttpStatuses.HTTP_NOT_FOUND -> new ClientOperationException(new OperationError(
+                ErrorCode.NOT_FOUND,
+                "Ресурс не найден на трекере (HTTP 404): " + uri,
+                false
+            ));
+            case HttpStatuses.HTTP_STATE_CONFLICT ->
+                new ClientOperationException(new OperationError(
+                    ErrorCode.INVALID_STATE,
+                    "Конфликт состояния на трекере (HTTP 409): " + uri,
+                    false
+                ));
+            case HttpStatuses.HTTP_REQUEST_TIMEOUT, HttpStatuses.HTTP_TOO_MANY_REQUESTS ->
+                new ClientOperationException(
+                    new OperationError(
+                        ErrorCode.TRACKER_UNAVAILABLE,
+                        "Трекер временно недоступен (HTTP " + statusCode + "): " + uri,
+                        true
+                    )
+                );
+            default -> {
+                if (statusCode >= INTERNAL_SERVER_ERROR_MIN
+                    && statusCode < INTERNAL_SERVER_ERROR_MAX) {
+                    yield new ClientOperationException(new OperationError(
+                        ErrorCode.TRACKER_UNAVAILABLE,
+                        "Внутренняя ошибка трекера (HTTP " + statusCode + "): " + uri,
+                        true
+                    ));
+                }
+                yield new ClientOperationException(new OperationError(
+                    ErrorCode.INVALID_STATE,
+                    "Неожиданный HTTP-статус " + statusCode + " от трекера: " + uri,
+                    false
+                ));
+            }
+        };
+    }
+
+    private static ClientOperationException mapTransportError(Throwable throwable) {
+        Throwable cause = (throwable instanceof CompletionException && throwable.getCause() != null)
+            ? throwable.getCause()
+            : throwable;
+
+        if (cause instanceof ClientOperationException clientException) {
+            return clientException;
+        }
+
+        if (cause instanceof CancellationException) {
+            return new ClientOperationException(
+                new OperationError(ErrorCode.CANCELED, "Запрос к трекеру отменён", false),
+                cause
+            );
+        }
+
+        return new ClientOperationException(
+            new OperationError(
+                ErrorCode.TRACKER_UNAVAILABLE,
+                "Ошибка сети при обращении к трекеру: " + cause.getMessage(),
+                true
+            ),
+            cause
+        );
+    }
+
+    private static String buildBaseUrl(PeerAddress address) {
+        String host = address.host().trim();
+        String formattedHost = (host.contains(":") && !host.startsWith("["))
+            ? "[" + host + "]"
+            : host;
+        return "https://" + formattedHost + ":" + address.port();
+    }
+
+    private static String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static void validateTrackerAddress(PeerAddress address) {
+        if (address == null
+            || address.host() == null
+            || address.host().isBlank()
+            || address.port() <= PORT_MIN
+            || address.port() > PORT_MAX
+        ) {
+            throw createInvalidArgumentException(
+                "передан некорректный адрес трекера в HttpTrackerGateway"
+            );
+        }
+    }
+
+    private static void validateNull(Object obj, String paramName) {
+        if (obj == null) {
+            throw createInvalidArgumentException("передан null вместо валидного " + paramName);
+        }
+    }
+
+    private static void validateBlank(String str, String paramName) {
+        if (str == null || str.isBlank()) {
+            throw createInvalidArgumentException("передан пустой " + paramName);
+        }
+    }
+
+    // --- Вспомогательные методы HTTP ---
+
+    private static void validateCollection(Collection<String> collection, String paramName) {
+        if (collection == null || collection.stream().anyMatch(Objects::isNull)) {
+            throw createInvalidArgumentException(
+                "передана коллекция " + paramName + " с null или null вместо неё"
+            );
+        }
     }
 
     @Override
@@ -105,7 +222,8 @@ public final class Http3TrackerGateway implements TrackerGateway, AutoCloseable 
             .addAllFileIds(fileIds)
             .build();
 
-        HttpRequest.Builder request = postRequest(ApiEndpoints.TRACKER_HEARTBEAT, dto.toByteArray());
+        HttpRequest.Builder request = postRequest(ApiEndpoints.TRACKER_HEARTBEAT,
+            dto.toByteArray());
 
         return execute(request, bytes -> null);
     }
@@ -188,7 +306,7 @@ public final class Http3TrackerGateway implements TrackerGateway, AutoCloseable 
         }
     }
 
-    // --- Вспомогательные методы HTTP ---
+    // --- Валидация ---
 
     private HttpRequest.Builder postRequest(String endpoint, byte[] body) {
         return HttpRequest.newBuilder()
@@ -235,129 +353,15 @@ public final class Http3TrackerGateway implements TrackerGateway, AutoCloseable 
         }
     }
 
-    private static ClientOperationException mapHttpStatusError(int statusCode, URI uri) {
-        return switch (statusCode) {
-            case HttpStatuses.HTTP_BAD_REQUEST -> new ClientOperationException(new OperationError(
-                ErrorCode.INVALID_ARGUMENT,
-                "Трекер отклонил запрос (HTTP 400): " + uri,
-                false
-            ));
-            case HttpStatuses.HTTP_NOT_FOUND -> new ClientOperationException(new OperationError(
-                ErrorCode.NOT_FOUND,
-                "Ресурс не найден на трекере (HTTP 404): " + uri,
-                false
-            ));
-            case HttpStatuses.HTTP_STATE_CONFLICT -> new ClientOperationException(new OperationError(
-                ErrorCode.INVALID_STATE,
-                "Конфликт состояния на трекере (HTTP 409): " + uri,
-                false
-            ));
-            case HttpStatuses.HTTP_REQUEST_TIMEOUT, HttpStatuses.HTTP_TOO_MANY_REQUESTS ->
-                new ClientOperationException(
-                    new OperationError(
-                        ErrorCode.TRACKER_UNAVAILABLE,
-                        "Трекер временно недоступен (HTTP " + statusCode + "): " + uri,
-                        true
-                    )
-                );
-            default -> {
-                if (statusCode >= INTERNAL_SERVER_ERROR_MIN && statusCode < INTERNAL_SERVER_ERROR_MAX) {
-                    yield new ClientOperationException(new OperationError(
-                        ErrorCode.TRACKER_UNAVAILABLE,
-                        "Внутренняя ошибка трекера (HTTP " + statusCode + "): " + uri,
-                        true
-                    ));
-                }
-                yield new ClientOperationException(new OperationError(
-                    ErrorCode.INVALID_STATE,
-                    "Неожиданный HTTP-статус " + statusCode + " от трекера: " + uri,
-                    false
-                ));
-            }
-        };
-    }
-
-    private static ClientOperationException mapTransportError(Throwable throwable) {
-        Throwable cause = (throwable instanceof CompletionException && throwable.getCause() != null)
-            ? throwable.getCause()
-            : throwable;
-
-        if (cause instanceof ClientOperationException clientException) {
-            return clientException;
-        }
-
-        if (cause instanceof CancellationException) {
-            return new ClientOperationException(
-                new OperationError(ErrorCode.CANCELED, "Запрос к трекеру отменён", false),
-                cause
-            );
-        }
-
-        return new ClientOperationException(
-            new OperationError(
-                ErrorCode.TRACKER_UNAVAILABLE,
-                "Ошибка сети при обращении к трекеру: " + cause.getMessage(),
-                true
-            ),
-            cause
-        );
-    }
-
-    private static String buildBaseUrl(PeerAddress address) {
-        String host = address.host().trim();
-        String formattedHost = (host.contains(":") && !host.startsWith("["))
-            ? "[" + host + "]"
-            : host;
-        return "https://" + formattedHost + ":" + address.port();
-    }
-
-    private static String urlEncode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
-    }
-
-    // --- Валидация ---
-
     private void ensureOpen() {
         if (closed.get()) {
             throw createInvalidStateException("использование HttpTrackerGateway после закрытия");
         }
     }
 
-    private static void validateTrackerAddress(PeerAddress address) {
-        if (address == null
-            || address.host() == null
-            || address.host().isBlank()
-            || address.port() <= PORT_MIN
-            || address.port() > PORT_MAX
-        ) {
-            throw createInvalidArgumentException(
-                "передан некорректный адрес трекера в HttpTrackerGateway"
-            );
-        }
-    }
-
-    private static void validateNull(Object obj, String paramName) {
-        if (obj == null) {
-            throw createInvalidArgumentException("передан null вместо валидного " + paramName);
-        }
-    }
-
-    private static void validateBlank(String str, String paramName) {
-        if (str == null || str.isBlank()) {
-            throw createInvalidArgumentException("передан пустой " + paramName);
-        }
-    }
-
-    private static void validateCollection(Collection<String> collection, String paramName) {
-        if (collection == null || collection.stream().anyMatch(Objects::isNull)) {
-            throw createInvalidArgumentException(
-                "передана коллекция " + paramName + " с null или null вместо неё"
-            );
-        }
-    }
-
     @FunctionalInterface
     private interface ResponseParser<T> {
+
         T parse(byte[] body) throws InvalidProtocolBufferException;
     }
 }

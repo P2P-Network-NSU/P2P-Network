@@ -4,6 +4,7 @@ import ru.nsu.p2p.common.stream.MediaDescriptor;
 import ru.nsu.p2p.common.stream.ReadableMedia;
 
 public class P2PReadableMedia implements ReadableMedia {
+
     @Override
     public MediaDescriptor describe() {
         return null;

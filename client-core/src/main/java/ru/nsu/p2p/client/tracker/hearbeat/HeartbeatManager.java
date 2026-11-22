@@ -18,6 +18,7 @@ import ru.nsu.p2p.client.tracker.TrackerGateway;
  */
 public final class HeartbeatManager {
 
+    private static final long INITIAL_DELAY = 0L;
     private final TrackerGateway gateway;
     private final String peerId;
     private final Supplier<Collection<String>> activeFilesSupplier;
@@ -28,10 +29,10 @@ public final class HeartbeatManager {
     /**
      * Создает менеджер-демон, посылающий хартбиты.
      *
-     * @param peerId                ИД клиента.
-     * @param gateway               Мост для подключения к серверу.
-     * @param activeFilesSupplier   ссылка на сборщик активных файлов из
-     * {@link ru.nsu.p2p.client.sharing.ShareService}
+     * @param peerId              ИД клиента.
+     * @param gateway             Мост для подключения к серверу.
+     * @param activeFilesSupplier ссылка на сборщик активных файлов из
+     *                            {@link ru.nsu.p2p.client.sharing.ShareService}
      */
     public HeartbeatManager(
         String peerId,
@@ -63,7 +64,6 @@ public final class HeartbeatManager {
                 + " в конструктор HeartbeatManager");
         }
 
-
         this.peerId = peerId;
         this.gateway = gateway;
         this.activeFilesSupplier = activeFilesSupplier;
@@ -94,7 +94,7 @@ public final class HeartbeatManager {
                 long periodMs = interval.toMillis();
                 scheduler.scheduleAtFixedRate(
                     this::sendHeartbeat,
-                    0L,
+                    INITIAL_DELAY,
                     periodMs,
                     TimeUnit.MILLISECONDS
                 );
@@ -103,7 +103,7 @@ public final class HeartbeatManager {
                     + "планировщик менеджера хартбитов");
             }
         } else {
-            if (stopped.get()){
+            if (stopped.get()) {
                 throw createInvalidStateException("менеджер хартбитов не может "
                     + "быть запущен после остановки");
             } else {

@@ -18,6 +18,9 @@ import tech.kwik.flupke.Http3ClientBuilder;
 
 final class Http3TrackerTransport implements AutoCloseable {
 
+    private static final String KEYSTORE_TYPE = "PKCS12";
+    private static final String DEFAULT_KEYSTORE_RESOURCE = "client-truststore.p12";
+    private static final String DEFAULT_KEY_PASSWORD = "changeit";
     private final HttpClient client;
     private final Duration readTimeout;
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -77,17 +80,18 @@ final class Http3TrackerTransport implements AutoCloseable {
 
     private HttpClient buildClient() {
         try {
-            KeyStore trustStore = KeyStore.getInstance("PKCS12");
+            KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE);
 
             try (InputStream is =
                 getClass()
                     .getClassLoader()
-                    .getResourceAsStream("client-truststore.p12")
+                    .getResourceAsStream(DEFAULT_KEYSTORE_RESOURCE)
             ) {
                 if (is == null) {
-                    throw new RuntimeException("Файл client-truststore.p12 не найден в ресурсах");
+                    throw new RuntimeException(
+                        "Файл " + DEFAULT_KEYSTORE_RESOURCE + " не найден в ресурсах");
                 }
-                trustStore.load(is, "changeit".toCharArray());
+                trustStore.load(is, DEFAULT_KEY_PASSWORD.toCharArray());
             }
 
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(

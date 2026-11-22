@@ -43,6 +43,38 @@ public final class Http3PeerTransfer implements PeerTransfer, AutoCloseable {
         this.transport = transport;
     }
 
+    private static PeerAddress validatePeer(PeerInfo peer) {
+        if (peer == null || peer.address() == null) {
+            throw createInvalidArgumentException("PeerInfo и его адрес не могут быть null");
+        }
+        PeerAddress address = peer.address();
+        if (address.host() == null || address.host().isBlank()) {
+            throw createInvalidArgumentException("Хост пира не может быть пустым");
+        }
+        if (address.port() <= PORT_MIN || address.port() > PORT_MAX) {
+            throw createInvalidArgumentException("Некорректный порт пира: " + address.port());
+        }
+        return address;
+    }
+
+    private static void validateFileId(String fileId) {
+        if (fileId == null || fileId.isBlank()) {
+            throw createInvalidArgumentException("fileId не может быть пустым");
+        }
+    }
+
+    private static URI buildUri(PeerAddress address, String pathAndQuery) {
+        String host = address.host();
+        if (host.contains(":") && !host.startsWith("[")) {
+            host = "[" + host + "]";
+        }
+        try {
+            return URI.create("https://" + host + ":" + address.port() + pathAndQuery);
+        } catch (IllegalArgumentException e) {
+            throw createInvalidArgumentException("Некорректный адрес пира: " + host);
+        }
+    }
+
     @Override
     public CompletionStage<BitSet> getAvailableChunks(
         PeerInfo peer,
@@ -223,38 +255,6 @@ public final class Http3PeerTransfer implements PeerTransfer, AutoCloseable {
     private void ensureOpen() {
         if (closed.get()) {
             throw createInvalidStateException("Использование Http3PeerTransfer после закрытия");
-        }
-    }
-
-    private static PeerAddress validatePeer(PeerInfo peer) {
-        if (peer == null || peer.address() == null) {
-            throw createInvalidArgumentException("PeerInfo и его адрес не могут быть null");
-        }
-        PeerAddress address = peer.address();
-        if (address.host() == null || address.host().isBlank()) {
-            throw createInvalidArgumentException("Хост пира не может быть пустым");
-        }
-        if (address.port() <= PORT_MIN || address.port() > PORT_MAX) {
-            throw createInvalidArgumentException("Некорректный порт пира: " + address.port());
-        }
-        return address;
-    }
-
-    private static void validateFileId(String fileId) {
-        if (fileId == null || fileId.isBlank()) {
-            throw createInvalidArgumentException("fileId не может быть пустым");
-        }
-    }
-
-    private static URI buildUri(PeerAddress address, String pathAndQuery) {
-        String host = address.host();
-        if (host.contains(":") && !host.startsWith("[")) {
-            host = "[" + host + "]";
-        }
-        try {
-            return URI.create("https://" + host + ":" + address.port() + pathAndQuery);
-        } catch (IllegalArgumentException e) {
-            throw createInvalidArgumentException("Некорректный адрес пира: " + host);
         }
     }
 }

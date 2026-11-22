@@ -6,5 +6,6 @@ import tech.kwik.flupke.server.HttpServerResponse;
 
 @FunctionalInterface
 public interface PeerEndpointHandler {
+
     void handle(HttpServerRequest request, HttpServerResponse response) throws IOException;
 }
