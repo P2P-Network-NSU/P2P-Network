@@ -1,23 +1,25 @@
-package ru.nsu.p2p.client.peer.http.server;
+package ru.nsu.p2p.client.peer.http.server.router;
 
 import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import ru.nsu.p2p.client.peer.http.server.handler.PeerEndpointHandler;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.http.HttpStatuses;
 import tech.kwik.flupke.server.HttpRequestHandler;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;
 
-final class PeerHttpRouter implements HttpRequestHandler {
+public final class PeerHttpRouter implements HttpRequestHandler {
 
     private final Map<RouteKey, PeerEndpointHandler> routes = new ConcurrentHashMap<>();
     private final Semaphore concurrencyLimiter;
 
-    PeerHttpRouter(int maxConcurrentRequests) {
+    public PeerHttpRouter(int maxConcurrentRequests) {
         if (maxConcurrentRequests <= 0) {
             throw createInvalidArgumentException(
                 "maxConcurrentRequests должен быть больше 0"
@@ -26,11 +28,11 @@ final class PeerHttpRouter implements HttpRequestHandler {
         this.concurrencyLimiter = new Semaphore(maxConcurrentRequests);
     }
 
-    void register(String method, String path, PeerEndpointHandler handler) {
+    public void register(String method, String path, PeerEndpointHandler handler) {
         if (method == null || method.isBlank() || path == null || path.isBlank() || handler == null) {
             throw createInvalidArgumentException("Некорректные аргументы регистрации маршрута");
         }
-        routes.put(new RouteKey(method.toUpperCase(), path), handler);
+        routes.put(new RouteKey(method, path), handler);
     }
 
     @Override
@@ -44,7 +46,7 @@ final class PeerHttpRouter implements HttpRequestHandler {
 
         try {
             RouteKey key = new RouteKey(
-                request.method().toUpperCase(),
+                request.method(),
                 extractRoutePath(request.path())
             );
             PeerEndpointHandler handler = routes.get(key);
@@ -84,7 +86,7 @@ final class PeerHttpRouter implements HttpRequestHandler {
 
     private record RouteKey(String method, String path) {
         public RouteKey {
-            method = method.toUpperCase();
+            method = method.toUpperCase(Locale.ROOT);
         }
     }
 }

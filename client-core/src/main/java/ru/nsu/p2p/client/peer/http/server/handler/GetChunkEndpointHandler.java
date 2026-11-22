@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.peer.http.server;
+package ru.nsu.p2p.client.peer.http.server.handler;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -10,11 +10,11 @@ import ru.nsu.p2p.common.model.FileManifest;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;
 
-final class GetChunkEndpointHandler implements PeerEndpointHandler {
+public final class GetChunkEndpointHandler implements PeerEndpointHandler {
 
     private final SharedFileProvider sharedFileProvider;
 
-    GetChunkEndpointHandler(SharedFileProvider sharedFileProvider) {
+    public GetChunkEndpointHandler(SharedFileProvider sharedFileProvider) {
         this.sharedFileProvider = sharedFileProvider;
     }
 

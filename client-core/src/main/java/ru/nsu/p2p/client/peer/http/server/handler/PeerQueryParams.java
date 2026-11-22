@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.peer.http.server;
+package ru.nsu.p2p.client.peer.http.server.handler;
 
 import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
 
