@@ -40,7 +40,7 @@ import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
 /**
  * HTTP/3-реализация {@link TrackerGateway} поверх {@link Http3TrackerTransport} и Protobuf.
  */
-public final class HttpTrackerGateway implements TrackerGateway {
+public final class Http3TrackerGateway implements TrackerGateway {
 
     public static final int PORT_MAX = 65535;
     public static final int PORT_MIN = 0;
@@ -51,7 +51,7 @@ public final class HttpTrackerGateway implements TrackerGateway {
     private final Http3TrackerTransport transport;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public HttpTrackerGateway(PeerAddress trackerAddress, int readTimeoutMs) {
+    public Http3TrackerGateway(PeerAddress trackerAddress, int readTimeoutMs) {
         validateTrackerAddress(trackerAddress);
         if (readTimeoutMs <= 0) {
             throw createInvalidArgumentException(
@@ -63,7 +63,7 @@ public final class HttpTrackerGateway implements TrackerGateway {
         this.transport = new Http3TrackerTransport(readTimeoutMs);
     }
 
-    HttpTrackerGateway(PeerAddress trackerAddress, Http3TrackerTransport transport) {
+    Http3TrackerGateway(PeerAddress trackerAddress, Http3TrackerTransport transport) {
         validateTrackerAddress(trackerAddress);
         if (transport == null) {
             throw createInvalidArgumentException(

@@ -16,7 +16,7 @@ import java.util.function.Function;
 import ru.nsu.p2p.client.event.ClientEventDispatcher;
 import ru.nsu.p2p.client.tracker.TrackerGateway;
 import ru.nsu.p2p.client.tracker.hearbeat.HeartbeatManager;
-import ru.nsu.p2p.client.tracker.http.HttpTrackerGateway;
+import ru.nsu.p2p.client.tracker.http.Http3TrackerGateway;
 import ru.nsu.p2p.common.api.CatalogApi;
 import ru.nsu.p2p.common.api.ClientEvents;
 import ru.nsu.p2p.common.api.ClientLifecycle;
@@ -67,7 +67,7 @@ public class P2PClientCore implements
     public P2PClientCore() {
         this(
             new ClientEventDispatcher(),
-            settings -> new HttpTrackerGateway(
+            settings -> new Http3TrackerGateway(
                 settings.trackerAddress(),
                 settings.trackerReadTimeOutMs()
             )

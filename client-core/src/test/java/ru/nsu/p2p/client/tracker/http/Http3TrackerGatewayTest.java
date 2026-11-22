@@ -62,7 +62,7 @@ import ru.nsu.p2p.common.proto.tracker.PublishFileRequestDto;
 import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
 
 @ExtendWith(MockitoExtension.class)
-class HttpTrackerGatewayTest {
+class Http3TrackerGatewayTest {
 
     private static final PeerAddress TRACKER_ADDRESS = new PeerAddress("127.0.0.1", 45500);
     private static final String BASE_URL = "https://127.0.0.1:45500";
@@ -70,11 +70,11 @@ class HttpTrackerGatewayTest {
     @Mock
     private Http3TrackerTransport transport;
 
-    private HttpTrackerGateway gateway;
+    private Http3TrackerGateway gateway;
 
     @BeforeEach
     void setUp() {
-        gateway = new HttpTrackerGateway(TRACKER_ADDRESS, transport);
+        gateway = new Http3TrackerGateway(TRACKER_ADDRESS, transport);
     }
 
     // --- Успешные сценарии ---
@@ -254,7 +254,7 @@ class HttpTrackerGatewayTest {
 
     @Test
     void shouldFormatIpv6AddressWithBrackets() {
-        HttpTrackerGateway ipv6Gateway = new HttpTrackerGateway(new PeerAddress("::1", 45500), transport);
+        Http3TrackerGateway ipv6Gateway = new Http3TrackerGateway(new PeerAddress("::1", 45500), transport);
         AtomicReference<HttpRequest> captured = stubResponse(204, new byte[0]);
 
         ipv6Gateway.heartbeat("peer-1", List.of()).toCompletableFuture().join();
@@ -322,12 +322,12 @@ class HttpTrackerGatewayTest {
 
     @Test
     void constructorShouldRejectInvalidParameters() {
-        assertInvalidArgument(() -> new HttpTrackerGateway(null, transport));
-        assertInvalidArgument(() -> new HttpTrackerGateway(new PeerAddress(" ", 45500), transport));
-        assertInvalidArgument(() -> new HttpTrackerGateway(new PeerAddress("127.0.0.1", 0), transport));
-        assertInvalidArgument(() -> new HttpTrackerGateway(new PeerAddress("127.0.0.1", 70000), transport));
-        assertInvalidArgument(() -> new HttpTrackerGateway(TRACKER_ADDRESS, (Http3TrackerTransport) null));
-        assertInvalidArgument(() -> new HttpTrackerGateway(TRACKER_ADDRESS, 0));
+        assertInvalidArgument(() -> new Http3TrackerGateway(null, transport));
+        assertInvalidArgument(() -> new Http3TrackerGateway(new PeerAddress(" ", 45500), transport));
+        assertInvalidArgument(() -> new Http3TrackerGateway(new PeerAddress("127.0.0.1", 0), transport));
+        assertInvalidArgument(() -> new Http3TrackerGateway(new PeerAddress("127.0.0.1", 70000), transport));
+        assertInvalidArgument(() -> new Http3TrackerGateway(TRACKER_ADDRESS, (Http3TrackerTransport) null));
+        assertInvalidArgument(() -> new Http3TrackerGateway(TRACKER_ADDRESS, 0));
     }
 
     @Test
