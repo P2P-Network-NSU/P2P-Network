@@ -1,4 +1,4 @@
-package ru.nsu.p2p.tracker.http.routing;
+package ru.nsu.p2p.tracker.http.router;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashMap;

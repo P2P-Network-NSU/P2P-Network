@@ -16,7 +16,7 @@ import ru.nsu.p2p.common.proto.tracker.PeerAddressDto;
 import ru.nsu.p2p.common.proto.tracker.PeerLeaseResponseDto;
 import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
 import ru.nsu.p2p.tracker.http.server.Http3TrackerServer;
-import ru.nsu.p2p.tracker.http.routing.HttpRouter;
+import ru.nsu.p2p.tracker.http.router.HttpRouter;
 import ru.nsu.p2p.tracker.http.server.TlsConfig;
 import ru.nsu.p2p.tracker.http.handler.post_handlers.RegisterEndpointHandler;
 import ru.nsu.p2p.tracker.repository.memory.InMemoryCatalogRepository;

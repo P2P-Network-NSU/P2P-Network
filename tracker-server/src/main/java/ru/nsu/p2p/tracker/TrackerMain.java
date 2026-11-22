@@ -8,7 +8,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import ru.nsu.p2p.common.http.ApiEndpoints;
 import ru.nsu.p2p.tracker.http.server.Http3TrackerServer;
-import ru.nsu.p2p.tracker.http.routing.HttpRouter;
+import ru.nsu.p2p.tracker.http.router.HttpRouter;
 import ru.nsu.p2p.tracker.http.server.TlsConfig;
 import ru.nsu.p2p.tracker.http.handler.post_handlers.CatalogSearchEndpointHandler;
 import ru.nsu.p2p.tracker.http.handler.get_handlers.GetManifestEndpointHandler;
