@@ -40,7 +40,7 @@ import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
 /**
  * HTTP/3-реализация {@link TrackerGateway} поверх {@link Http3TrackerTransport} и Protobuf.
  */
-public final class Http3TrackerGateway implements TrackerGateway {
+public final class Http3TrackerGateway implements TrackerGateway, AutoCloseable {
 
     public static final int PORT_MAX = 65535;
     public static final int PORT_MIN = 0;
