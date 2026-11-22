@@ -2,6 +2,7 @@ package ru.nsu.p2p.tracker.http.routing;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
@@ -29,7 +30,6 @@ public class HttpRouter implements HttpRequestHandler {
 
             if (handler == null) {
                 response.setStatus(HttpStatuses.HTTP_NOT_FOUND);
-                sendNoneBodyResponse(response);
                 return;
             }
 
@@ -44,25 +44,14 @@ public class HttpRouter implements HttpRequestHandler {
             } else {
                 response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
             }
-            sendNoneBodyResponse(response);
 
         } catch (InvalidProtocolBufferException e) {
             response.setStatus(HttpStatuses.HTTP_BAD_REQUEST);
-            sendNoneBodyResponse(response);
         }
         catch (Exception e) {
             System.err.println("Внутренняя ошибка сервера: " + e.getMessage());
             e.printStackTrace();
             response.setStatus(HttpStatuses.HTTP_INTERNAL_SERVER_ERROR);
-            sendNoneBodyResponse(response);
-        }
-    }
-
-    private void sendNoneBodyResponse(HttpServerResponse response) {
-        try (var _ = response.getOutputStream()) {
-
-        } catch (Exception ioException) {
-            System.err.println("Ошибка при закрытии потока ответа: " + ioException.getMessage());
         }
     }
 
@@ -73,4 +62,15 @@ public class HttpRouter implements HttpRequestHandler {
         String cleanPath = (queryIndex >= 0) ? path.substring(0, queryIndex) : path;
         return new RouteKey(method, cleanPath);
     }
+
+    private record RouteKey(
+        String method,
+        String path
+    ) {
+
+        public RouteKey {
+            method = method.toUpperCase(Locale.ROOT);
+        }
+    }
+
 }

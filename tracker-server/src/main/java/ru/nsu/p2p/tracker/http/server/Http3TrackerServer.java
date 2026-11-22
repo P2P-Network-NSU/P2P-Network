@@ -12,8 +12,8 @@ import tech.kwik.flupke.server.HttpRequestHandler;
 
 public class Http3TrackerServer {
 
-    public static final int MAX_BIDIRECT_STREAMS = 100;
-    public static final int MAX_UNIDIRECT_STREAMS = 3;
+    private static final int MAX_BIDIRECT_STREAMS = 100;
+    private static final int MAX_UNIDIRECT_STREAMS = 3;
     private final int port;
     private final TlsConfig tlsConfig;
     private final HttpRequestHandler requestHandler;
@@ -43,7 +43,7 @@ public class Http3TrackerServer {
             serverConnector = buildConnector();
             serverConnector.start();
 
-            System.out.println("HTTP/3 Трекер запущен на UDP порту " + port);
+            System.out.println("[HTTP/3] Трекер запущен на UDP порту " + port);
 
         } catch (Exception e) {
             state.set(State.STOPPED);

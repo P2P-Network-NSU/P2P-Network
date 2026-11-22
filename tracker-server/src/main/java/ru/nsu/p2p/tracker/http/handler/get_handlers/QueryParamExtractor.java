@@ -7,8 +7,11 @@ import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
 import tech.kwik.flupke.server.HttpServerRequest;
 
-public class QueryParamExtractor {
-    public static String extractFileId(HttpServerRequest request) {
+final class QueryParamExtractor {
+
+    private QueryParamExtractor() {}
+
+    static String extractFileId(HttpServerRequest request) {
         String path = request.path();
         int queryIndex = path.indexOf('?');
 

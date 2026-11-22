@@ -26,7 +26,7 @@ import ru.nsu.p2p.tracker.service.TrackerService;
 
 public final class TrackerMain {
 
-    public static final int PORT = 45500;
+    private static final int PORT = 45500;
 
     static void main(String[] args) {
         try {
