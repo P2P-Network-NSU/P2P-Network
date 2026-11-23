@@ -106,6 +106,7 @@ public final class Http3PeerServer implements PeerServerControl, AutoCloseable {
                     .build();
 
                 SysOutLogger logger = new SysOutLogger();
+                logger.logInfo(true);
                 logger.logWarning(true);
 
                 ServerConnector connector = ServerConnector.builder()

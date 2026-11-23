@@ -209,6 +209,10 @@ public final class Http3PeerTransfer implements PeerTransfer, AutoCloseable {
             );
         }
 
+        System.err.println("[P2P Client] Ошибка запроса к " + address.host() + ":" + address.port()
+            + " -> " + cause.getClass().getName() + ": " + cause.getMessage());
+        cause.printStackTrace(System.err);
+
         return new ClientOperationException(
             new OperationError(
                 ErrorCode.CONNECTION_TIMEOUT,

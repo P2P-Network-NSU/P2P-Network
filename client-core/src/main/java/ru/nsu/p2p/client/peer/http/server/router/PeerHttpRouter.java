@@ -39,6 +39,8 @@ public final class PeerHttpRouter implements HttpRequestHandler {
     public void handleRequest(HttpServerRequest request, HttpServerResponse response)
         throws IOException
     {
+        System.out.println("[P2P Server] " + request.method() + " " + request.path());
+
         if (!concurrencyLimiter.tryAcquire()) {
             response.setStatus(HttpStatuses.HTTP_SERVICE_UNAVAILABLE);
             return;

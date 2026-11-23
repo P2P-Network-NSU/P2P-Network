@@ -149,7 +149,7 @@ public class DownloadsView {
         if (error instanceof ClientOperationException operation) {
             message = switch (operation.getError().code()) {
                 case NOT_FOUND -> "Файл не найден у пира";
-                case CONNECTION_TIMEOUT -> "Пир недоступен";
+                case CONNECTION_TIMEOUT -> operation.getMessage();
                 case TARGET_EXISTS -> "Такой файл уже есть в папке загрузок";
                 default -> operation.getMessage();
             };
