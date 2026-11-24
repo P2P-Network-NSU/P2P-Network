@@ -46,7 +46,9 @@ public final class HeartbeatManager {
                 + " в конструктор HeartbeatManager");
         }
 
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
+            Thread.ofPlatform().daemon(true).name("HearbeatManager").factory()
+        );
         this(peerId, gateway, activeFilesSupplier, scheduler);
     }
 
