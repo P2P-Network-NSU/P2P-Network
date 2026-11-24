@@ -4,108 +4,75 @@ import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidSta
 
 import java.io.InputStream;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.security.KeyStore;
-import java.time.Duration;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import ru.nsu.p2p.client.http.AbstractHttp3Transport;
 import tech.kwik.flupke.Http3ClientBuilder;
 
-final class Http3TrackerTransport implements AutoCloseable {
+final class Http3TrackerTransport extends AbstractHttp3Transport {
 
     private static final String KEYSTORE_TYPE = "PKCS12";
     private static final String DEFAULT_KEYSTORE_RESOURCE = "client-truststore.p12";
     private static final String DEFAULT_KEY_PASSWORD = "changeit";
-    private final HttpClient client;
-    private final Duration readTimeout;
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final Set<CompletableFuture<HttpResponse<byte[]>>> inFlightRequests =
-        ConcurrentHashMap.newKeySet();
+
+    private final X509TrustManager trustManager;
 
     Http3TrackerTransport(int readTimeoutMs) {
-        if (readTimeoutMs <= 0) {
-            throw createInvalidStateException("Таймаут чтения должен быть больше 0");
+        super(readTimeoutMs);
+        try {
+            this.trustManager = loadTrustManager(
+                DEFAULT_KEYSTORE_RESOURCE,
+                DEFAULT_KEY_PASSWORD.toCharArray()
+            );
+        } catch (RuntimeException e) {
+            close();
+            throw e;
         }
-
-        this.readTimeout = Duration.ofMillis(readTimeoutMs);
-        this.client = buildClient();
-    }
-
-    CompletableFuture<HttpResponse<byte[]>> sendAsync(HttpRequest.Builder requestBuilder) {
-        if (closed.get()) {
-            throw createInvalidStateException("Использование Http3Transport после закрытия");
-        }
-
-        HttpRequest request = requestBuilder
-            .timeout(readTimeout)
-            .build();
-
-        CompletableFuture<HttpResponse<byte[]>> future =
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray());
-
-        inFlightRequests.add(future);
-        future.whenComplete((response, error) -> inFlightRequests.remove(future));
-
-        if (closed.get()) {
-            future.cancel(true);
-            inFlightRequests.remove(future);
-        }
-
-        return future;
     }
 
     @Override
-    public void close() {
-        if (!closed.compareAndSet(false, true)) {
-            return;
-        }
-
-        for (CompletableFuture<HttpResponse<byte[]>> future : inFlightRequests) {
-            future.cancel(true);
-        }
-        inFlightRequests.clear();
-
+    protected HttpClient createHttpClient() {
         try {
-            client.shutdownNow();
-            client.close();
-        } catch (Exception ignored) {
-
-        }
-    }
-
-    private HttpClient buildClient() {
-        try {
-            KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE);
-
-            try (InputStream is =
-                getClass()
-                    .getClassLoader()
-                    .getResourceAsStream(DEFAULT_KEYSTORE_RESOURCE)
-            ) {
-                if (is == null) {
-                    throw new RuntimeException(
-                        "Файл " + DEFAULT_KEYSTORE_RESOURCE + " не найден в ресурсах");
-                }
-                trustStore.load(is, DEFAULT_KEY_PASSWORD.toCharArray());
-            }
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(
-                TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(trustStore);
-            X509TrustManager trustManager = (X509TrustManager) tmf.getTrustManagers()[0];
-
             return new Http3ClientBuilder()
                 .trustManager(trustManager)
                 .build();
-
         } catch (Exception e) {
             throw createInvalidStateException(
-                "Ошибка инициализации HTTP/3 клиента: " + e.getMessage());
+                "Ошибка инициализации HTTP/3 клиента трекера: " + e.getMessage()
+            );
+        }
+    }
+
+    private static X509TrustManager loadTrustManager(String resourceName, char[] password) {
+        try {
+            KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE);
+            try (InputStream is = Http3TrackerTransport.class.getClassLoader()
+                .getResourceAsStream(resourceName)) {
+                if (is == null) {
+                    throw new IllegalStateException(
+                        "Файл " + resourceName + " не найден в ресурсах"
+                    );
+                }
+                trustStore.load(is, password);
+            }
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                TrustManagerFactory.getDefaultAlgorithm()
+            );
+            tmf.init(trustStore);
+
+            for (TrustManager tm : tmf.getTrustManagers()) {
+                if (tm instanceof X509TrustManager x509TrustManager) {
+                    return x509TrustManager;
+                }
+            }
+            throw new IllegalStateException("X509TrustManager не найден в TrustManagerFactory");
+        } catch (Exception e) {
+            throw createInvalidStateException(
+                "Ошибка загрузки truststore трекера: " + e.getMessage()
+            );
         }
     }
 }
