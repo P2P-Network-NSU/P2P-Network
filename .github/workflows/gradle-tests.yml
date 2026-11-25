@@ -14,17 +14,25 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v6
+      - name: Set up JDK 26
+        uses: actions/setup-java@v6
         with:
-          distribution: temurin
+          distribution: 'corretto'
           java-version: '26'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Prepare JavaFX display
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb xauth libgtk-3-0t64
 
-      - name: Run tests
-        run: xvfb-run -a ./gradlew --no-daemon test
+      - name: Build and Run tests
+        run: xvfb-run -a ./gradlew build --no-daemon

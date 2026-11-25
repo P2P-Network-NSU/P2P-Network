@@ -2,7 +2,6 @@ package ru.nsu.p2p.tracker.repository;
 
 import java.util.List;
 import java.util.Optional;
-
 import ru.nsu.p2p.common.model.CatalogQuery;
 import ru.nsu.p2p.common.model.FileManifest;
 

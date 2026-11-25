@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 import ru.nsu.p2p.common.model.PeerInfo;
 import ru.nsu.p2p.tracker.repository.PeerRepository;
 
