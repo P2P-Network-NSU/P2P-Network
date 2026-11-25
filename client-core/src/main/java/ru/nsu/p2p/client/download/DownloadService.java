@@ -2,7 +2,6 @@ package ru.nsu.p2p.client.download;
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-
 import ru.nsu.p2p.common.transfer.DownloadRequest;
 import ru.nsu.p2p.common.transfer.TransferSnapshot;
 

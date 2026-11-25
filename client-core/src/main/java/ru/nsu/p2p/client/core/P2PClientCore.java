@@ -16,7 +16,7 @@ import java.util.function.Function;
 import ru.nsu.p2p.client.event.ClientEventDispatcher;
 import ru.nsu.p2p.client.tracker.TrackerGateway;
 import ru.nsu.p2p.client.tracker.hearbeat.HeartbeatManager;
-import ru.nsu.p2p.client.tracker.http.HttpTrackerGateway;
+import ru.nsu.p2p.client.tracker.http.Http3TrackerGateway;
 import ru.nsu.p2p.common.api.CatalogApi;
 import ru.nsu.p2p.common.api.ClientEvents;
 import ru.nsu.p2p.common.api.ClientLifecycle;
@@ -48,8 +48,7 @@ public class P2PClientCore implements
     TransferApi,
     ShareApi,
     StreamingApi,
-    ClientEvents
-{
+    ClientEvents {
 
     private final ClientEventDispatcher eventDispatcher;
     private final Function<ClientSettings, TrackerGateway> gatewayFactory;
@@ -67,7 +66,7 @@ public class P2PClientCore implements
     public P2PClientCore() {
         this(
             new ClientEventDispatcher(),
-            settings -> new HttpTrackerGateway(
+            settings -> new Http3TrackerGateway(
                 settings.trackerAddress(),
                 settings.trackerReadTimeOutMs()
             )
@@ -89,13 +88,43 @@ public class P2PClientCore implements
 
     // --- ClientLifecycle ---
 
+    private static OperationError extractOperationError(Throwable cause) {
+        if (cause instanceof ClientOperationException clientException) {
+            return clientException.getError();
+        }
+        return new OperationError(
+            ErrorCode.TRACKER_UNAVAILABLE,
+            "Не удалось подключиться к трекеру: " + cause.getMessage(),
+            true
+        );
+    }
+
+    private static void validateSettings(ClientSettings settings) {
+        if (settings == null) {
+            throw createInvalidArgumentException("ClientSettings не может быть null");
+        }
+        if (settings.trackerAddress() == null) {
+            throw createInvalidArgumentException("trackerAddress не может быть null");
+        }
+        if (settings.advertisedPeerAddress() == null) {
+            throw createInvalidArgumentException("advertisedPeerAddress не может быть null");
+        }
+        if (settings.peerId() == null || settings.peerId().isBlank()) {
+            throw createInvalidArgumentException("peerId не может быть пустым");
+        }
+        if (settings.trackerReadTimeOutMs() <= 0) {
+            throw createInvalidArgumentException("trackerReadTimeOutMs должен быть больше 0");
+        }
+    }
+
     @Override
     public CompletionStage<Void> start(ClientSettings settings) {
         validateSettings(settings);
 
         final TrackerGateway gateway;
         synchronized (lifecycleLock) {
-            if (lifecycleState == LifecycleState.STARTING || lifecycleState == LifecycleState.RUNNING) {
+            if (lifecycleState == LifecycleState.STARTING
+                || lifecycleState == LifecycleState.RUNNING) {
                 throw createInvalidStateException("Клиент уже запущен или подключается к трекеру");
             }
 
@@ -115,6 +144,8 @@ public class P2PClientCore implements
                 return null;
             });
     }
+
+    // --- CatalogApi ---
 
     @Override
     public CompletionStage<ClientStatusSnapshot> getStatus() {
@@ -149,31 +180,29 @@ public class P2PClientCore implements
         return CompletableFuture.completedFuture(null);
     }
 
-    // --- CatalogApi ---
-
     @Override
     public CompletionStage<CatalogPage> search(CatalogQuery query) {
         return requireRunningGateway().search(query);
     }
+
+    // --- ClientEvents ---
 
     @Override
     public CompletionStage<FileManifest> getManifest(String fileId) {
         return requireRunningGateway().getManifest(fileId);
     }
 
+    // --- Не реализованные пока API ---
+
     @Override
     public CompletionStage<PeerList> getPeers(String fileId) {
         return requireRunningGateway().getPeers(fileId);
     }
 
-    // --- ClientEvents ---
-
     @Override
     public Subscription subscribe(ClientEventListener listener) {
         return eventDispatcher.subscribe(listener);
     }
-
-    // --- Не реализованные пока API ---
 
     @Override
     public CompletionStage<ShareSnapshot> publish(PublishRequest request) {
@@ -230,6 +259,8 @@ public class P2PClientCore implements
         throw new UnsupportedOperationException("TransferApi.get ещё не реализован");
     }
 
+    // --- Внутренняя логика жизненного цикла ---
+
     @Override
     public CompletionStage<List<TransferSnapshot>> list() {
         throw new UnsupportedOperationException("TransferApi.list ещё не реализован");
@@ -239,8 +270,6 @@ public class P2PClientCore implements
     public CompletionStage<String> saveCopy(String transferId, Path targetPath) {
         throw new UnsupportedOperationException("TransferApi.saveCopy ещё не реализован");
     }
-
-    // --- Внутренняя логика жизненного цикла ---
 
     private void completeRegistration(
         TrackerGateway gateway,
@@ -328,35 +357,6 @@ public class P2PClientCore implements
         );
         currentStatus.set(snapshot);
         eventDispatcher.publishClientStatusUpdated(snapshot);
-    }
-
-    private static OperationError extractOperationError(Throwable cause) {
-        if (cause instanceof ClientOperationException clientException) {
-            return clientException.getError();
-        }
-        return new OperationError(
-            ErrorCode.TRACKER_UNAVAILABLE,
-            "Не удалось подключиться к трекеру: " + cause.getMessage(),
-            true
-        );
-    }
-
-    private static void validateSettings(ClientSettings settings) {
-        if (settings == null) {
-            throw createInvalidArgumentException("ClientSettings не может быть null");
-        }
-        if (settings.trackerAddress() == null) {
-            throw createInvalidArgumentException("trackerAddress не может быть null");
-        }
-        if (settings.advertisedPeerAddress() == null) {
-            throw createInvalidArgumentException("advertisedPeerAddress не может быть null");
-        }
-        if (settings.peerId() == null || settings.peerId().isBlank()) {
-            throw createInvalidArgumentException("peerId не может быть пустым");
-        }
-        if (settings.trackerReadTimeOutMs() <= 0) {
-            throw createInvalidArgumentException("trackerReadTimeOutMs должен быть больше 0");
-        }
     }
 
     private enum LifecycleState {

@@ -9,6 +9,7 @@ import ru.nsu.p2p.common.transfer.ShareSnapshot;
 import ru.nsu.p2p.common.transfer.TransferSnapshot;
 
 public class ClientEventDispatcher implements EventBus, ClientEvents {
+
     @Override
     public void publishTransferUpdated(TransferSnapshot snapshot) {
 

@@ -6,7 +6,7 @@ import java.nio.file.Path;
 public interface FileHashProvider {
 
     FileHashes build(
-            Path file,
-            int chunkSizeBytes
+        Path file,
+        int chunkSizeBytes
     ) throws IOException;
 }
