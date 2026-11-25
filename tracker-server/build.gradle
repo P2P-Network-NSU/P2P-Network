@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'jacoco'
+    id 'application'
 }
 
 group = 'ru.nsu.p2p'
@@ -25,4 +26,8 @@ dependencies {
 test {
     useJUnitPlatform()
     systemProperty 'net.bytebuddy.experimental', 'true'
+}
+
+application {
+    mainClass = 'ru.nsu.p2p.tracker.TrackerMain'
 }
