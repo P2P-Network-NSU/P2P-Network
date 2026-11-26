@@ -9,7 +9,7 @@ public interface ChunkAssembler {
 
     int readVerifiedBytes(long offset, byte[] buffer, int maxLength) throws IOException;
 
-    long getAvailablePrefixBytes();
+    // long getAvailablePrefixBytes(); это на будущее для стриминга, пока не актуально.
 
     boolean isComplete();
 
