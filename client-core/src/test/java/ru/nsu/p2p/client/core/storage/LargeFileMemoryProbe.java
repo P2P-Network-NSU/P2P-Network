@@ -1,6 +1,7 @@
 
 package ru.nsu.p2p.client.core.storage;
 
+import ru.nsu.p2p.client.file.FileHashes;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;

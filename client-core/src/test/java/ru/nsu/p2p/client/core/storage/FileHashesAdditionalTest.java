@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import ru.nsu.p2p.client.file.FileHashes;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.nsu.p2p.client.core.storage.StorageTestSupport.sha;

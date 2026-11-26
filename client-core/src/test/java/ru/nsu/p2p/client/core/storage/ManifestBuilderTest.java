@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import ru.nsu.p2p.client.file.FileHashes;
 
 import static org.junit.jupiter.api.Assertions.*;
 

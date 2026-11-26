@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import ru.nsu.p2p.client.file.FileHashes;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 
 import static org.junit.jupiter.api.Assertions.*;

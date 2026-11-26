@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import ru.nsu.p2p.client.file.FileHashes;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;

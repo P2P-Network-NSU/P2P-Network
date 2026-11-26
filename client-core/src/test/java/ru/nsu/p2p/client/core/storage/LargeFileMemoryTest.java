@@ -3,7 +3,7 @@ package ru.nsu.p2p.client.core.storage;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
+import ru.nsu.p2p.client.file.FileHashes;
 import ru.nsu.p2p.common.utils.HashUtils;
 import java.io.File;
 import java.io.IOException;
