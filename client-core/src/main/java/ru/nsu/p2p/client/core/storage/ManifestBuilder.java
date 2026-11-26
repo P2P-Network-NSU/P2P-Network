@@ -1,8 +1,8 @@
 
 package ru.nsu.p2p.client.core.storage;
 
+import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;
-import ru.nsu.p2p.common.utils.ProtocolRules;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +24,7 @@ public final class ManifestBuilder {
      * Вычисляет хеши с размером чанка по умолчанию.
      */
     public static FileHashes build(Path path) throws IOException {
-        return build(path, ProtocolRules.DEFAULT_CHUNK_SIZE_BYTES);
+        return build(path, ProtocolRules.CHUNK_SIZE_BYTES);
     }
 
     /**
