@@ -1,0 +1,38 @@
+package ru.nsu.p2p.tracker.http.handler.post_handlers;
+
+import java.io.IOException;
+import java.io.InputStream;
+import ru.nsu.p2p.common.protocol.http.HttpStatuses;
+import ru.nsu.p2p.common.proto.tracker.HeartbeatRequestDto;
+import ru.nsu.p2p.tracker.http.handler.EndpointHandler;
+import ru.nsu.p2p.tracker.service.TrackerService;
+import tech.kwik.flupke.server.HttpServerRequest;
+import tech.kwik.flupke.server.HttpServerResponse;
+
+public class HeartbeatEndpointHandler implements EndpointHandler {
+
+    private final TrackerService trackerService;
+
+    public HeartbeatEndpointHandler(TrackerService trackerService) {
+        this.trackerService = trackerService;
+    }
+
+    @Override
+    public void handle(HttpServerRequest request, HttpServerResponse response) throws Exception {
+        HeartbeatRequestDto requestDto = getRequestDto(request);
+
+        trackerService.updateHeartbeat(requestDto.getPeerId(), requestDto.getFileIdsList());
+
+        response.setStatus(HttpStatuses.HTTP_NO_CONTENT);
+    }
+
+    private HeartbeatRequestDto getRequestDto(HttpServerRequest request) throws IOException {
+        HeartbeatRequestDto requestDto;
+
+        try (InputStream in = request.body()) {
+            requestDto = HeartbeatRequestDto.parseFrom(in);
+        }
+
+        return requestDto;
+    }
+}

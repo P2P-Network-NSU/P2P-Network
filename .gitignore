@@ -1,4 +1,4 @@
-# Compiled class file
+    # Compiled class file
 *.class
 
 # Log file
@@ -31,3 +31,6 @@ replay_pid*
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
+
+# сертификаты
+certs/

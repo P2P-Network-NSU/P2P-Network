@@ -1,5 +1,6 @@
 package ru.nsu.p2p.common.api;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import ru.nsu.p2p.common.transfer.DownloadRequest;
@@ -45,5 +46,5 @@ public interface TransferApi {
      * Копирует скачанный файл из кэша в указанную пользователем директорию.
      * Полезно, если файл скачивался для стриминга во временную папку, а пользователь решил его сохранить.
      */
-    CompletionStage<String> saveCopy(String transferId, String targetPath);
+    CompletionStage<String> saveCopy(String transferId, Path targetPath);
 }

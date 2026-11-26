@@ -1,21 +1,33 @@
 plugins {
     id 'java'
+    id 'jacoco'
+    id 'application'
 }
 
 group = 'ru.nsu.p2p'
-version = 'unspecified'
+version = '1.0'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    implementation 'tech.kwik:flupke:0.9.4'
+    implementation 'tech.kwik:kwik:0.10.8'
+
     testImplementation platform('org.junit:junit-bom:6.0.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
     implementation project(':common')
 }
 
 test {
     useJUnitPlatform()
+    systemProperty 'net.bytebuddy.experimental', 'true'
+}
+
+application {
+    mainClass = 'ru.nsu.p2p.tracker.TrackerMain'
 }

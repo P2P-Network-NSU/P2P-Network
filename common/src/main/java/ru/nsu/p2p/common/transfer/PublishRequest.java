@@ -1,5 +1,7 @@
 package ru.nsu.p2p.common.transfer;
 
+import java.nio.file.Path;
+
 /**
  * Запрос на публикацию локального файла в P2P-сеть.
  * Ядро прочитает файл по указанному пути, разобьет его на чанки,
@@ -10,7 +12,7 @@ package ru.nsu.p2p.common.transfer;
  * @param description Описание раздачи.
  */
 public record PublishRequest(
-    String localPath,
+    Path localPath,
     String title,
     String description
 ) {
