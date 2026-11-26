@@ -11,6 +11,7 @@ import java.util.Objects;
  */
 public record FileHashes(
         String fileId,
+        long sizeBytes,
         List<String> chunkHashes
 ) {
     public FileHashes {

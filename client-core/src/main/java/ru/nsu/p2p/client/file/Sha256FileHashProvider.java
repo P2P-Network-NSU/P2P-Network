@@ -29,6 +29,7 @@ public class Sha256FileHashProvider implements FileHashProvider {
 
         Sha256Hasher digest = HashUtils.newSha256Hasher();
         List<String> hashes = new ArrayList<>();
+        long sizeBytes = 0;
 
         try (InputStream input = Files.newInputStream(file)) {
             while (true) {
@@ -37,6 +38,8 @@ public class Sha256FileHashProvider implements FileHashProvider {
                 if (chunk.length == 0) {
                     break;
                 }
+
+                sizeBytes += chunk.length;
 
                 digest.update(chunk);
                 hashes.add(HashUtils.computeSha256(chunk));
@@ -48,6 +51,6 @@ public class Sha256FileHashProvider implements FileHashProvider {
 
         String fileId = digest.finish();
 
-        return new FileHashes(fileId, hashes);
+        return new FileHashes(fileId, sizeBytes, hashes);
     }
 }
