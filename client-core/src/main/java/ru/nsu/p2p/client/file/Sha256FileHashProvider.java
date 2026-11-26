@@ -43,7 +43,7 @@ public class Sha256FileHashProvider implements FileHashProvider {
             }
         } catch (IOException e) {
             var error = new OperationError(ErrorCode.IO_ERROR, e.getMessage(), false);
-            throw new ClientOperationException(error, e.getCause());
+            throw new ClientOperationException(error, e);
         }
 
         String fileId = digest.finish();
