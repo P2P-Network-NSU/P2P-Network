@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
 import ru.nsu.p2p.client.sharing.SharedFileProvider;
-import ru.nsu.p2p.common.http.HttpStatuses;
+import ru.nsu.p2p.common.protocol.http.HttpStatuses;
 import ru.nsu.p2p.common.model.FileManifest;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;

@@ -6,7 +6,7 @@ import java.util.BitSet;
 import java.util.Map;
 import java.util.Optional;
 import ru.nsu.p2p.client.sharing.SharedFileProvider;
-import ru.nsu.p2p.common.http.HttpStatuses;
+import ru.nsu.p2p.common.protocol.http.HttpStatuses;
 import ru.nsu.p2p.common.mapper.PeerMapper;
 import ru.nsu.p2p.common.model.BitfieldMessage;
 import ru.nsu.p2p.common.model.FileManifest;

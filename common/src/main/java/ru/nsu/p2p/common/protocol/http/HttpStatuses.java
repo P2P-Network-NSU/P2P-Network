@@ -1,4 +1,4 @@
-package ru.nsu.p2p.common.http;
+package ru.nsu.p2p.common.protocol.http;
 
 public final class HttpStatuses {
 

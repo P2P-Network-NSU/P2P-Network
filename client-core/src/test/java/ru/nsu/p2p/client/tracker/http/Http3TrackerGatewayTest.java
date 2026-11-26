@@ -43,7 +43,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
-import ru.nsu.p2p.common.http.ApiEndpoints;
+import ru.nsu.p2p.common.protocol.http.ApiEndpoints;
 import ru.nsu.p2p.common.model.CatalogPage;
 import ru.nsu.p2p.common.model.CatalogQuery;
 import ru.nsu.p2p.common.model.FileManifest;

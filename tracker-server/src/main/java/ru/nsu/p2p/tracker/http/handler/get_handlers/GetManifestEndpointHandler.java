@@ -3,7 +3,7 @@ package ru.nsu.p2p.tracker.http.handler.get_handlers;
 import static ru.nsu.p2p.tracker.http.handler.get_handlers.QueryParamExtractor.extractFileId;
 
 import java.io.OutputStream;
-import ru.nsu.p2p.common.http.HttpStatuses;
+import ru.nsu.p2p.common.protocol.http.HttpStatuses;
 import ru.nsu.p2p.common.mapper.TrackerMapper;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.proto.tracker.FileManifestDto;

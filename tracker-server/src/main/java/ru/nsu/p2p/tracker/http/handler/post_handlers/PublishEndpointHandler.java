@@ -2,7 +2,7 @@ package ru.nsu.p2p.tracker.http.handler.post_handlers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import ru.nsu.p2p.common.http.HttpStatuses;
+import ru.nsu.p2p.common.protocol.http.HttpStatuses;
 import ru.nsu.p2p.common.mapper.TrackerMapper;
 import ru.nsu.p2p.common.proto.tracker.PublishFileRequestDto;
 import ru.nsu.p2p.tracker.http.handler.EndpointHandler;
