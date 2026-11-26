@@ -88,7 +88,7 @@ class LargeFileMemoryTest {
                 FileHashes.class,
                 HashUtils.class,
                 ru.nsu.p2p.common.model.FileManifest.class,
-                ru.nsu.p2p.common.utils.ProtocolRules.class
+                ru.nsu.p2p.common.protocol.ProtocolRules.class
         );
 
         for (Class<?> type : classes) {

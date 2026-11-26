@@ -2,8 +2,8 @@
 package ru.nsu.p2p.client.core.storage;
 
 import ru.nsu.p2p.common.model.FileManifest;
+import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;
-import ru.nsu.p2p.common.utils.ProtocolRules;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +27,7 @@ public final class LargeFileMemoryProbe {
 
         writeLargeFile(source);
 
-        int chunkSize = ProtocolRules.DEFAULT_CHUNK_SIZE_BYTES;
+        int chunkSize = ProtocolRules.CHUNK_SIZE_BYTES;
 
         FileHashes hashes = ManifestBuilder.build(source, chunkSize);
 

@@ -5,8 +5,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import ru.nsu.p2p.common.model.FileManifest;
+import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;
-import ru.nsu.p2p.common.utils.ProtocolRules;
 
 import java.io.File;
 import java.nio.file.Files;

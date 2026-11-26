@@ -6,7 +6,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import ru.nsu.p2p.common.utils.ProtocolRules;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import ru.nsu.p2p.common.protocol.ProtocolRules;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.nsu.p2p.client.core.storage.StorageTestSupport.*;
@@ -52,7 +52,7 @@ class ManifestBuilderAdditionalTest {
     @ParameterizedTest
     @ValueSource(ints = {-1, 0, 1, 17})
     void defaultChunkSizeHandlesItsExactBoundary(int delta) throws Exception {
-        int chunkSize = ProtocolRules.DEFAULT_CHUNK_SIZE_BYTES;
+        int chunkSize = ProtocolRules.CHUNK_SIZE_BYTES;
         byte[] data = randomBytes(chunkSize + delta, 402);
         Path source = Files.write(tempDir.resolve("source.bin"), data);
         FileHashes hashes = ManifestBuilder.build(source);
