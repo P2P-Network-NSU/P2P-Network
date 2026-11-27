@@ -5,11 +5,11 @@ import java.nio.file.Path;
 
 public interface ChunkAssembler {
 
-    void acceptChunk(int chunkIndex, byte[] data) throws IOException;
+    boolean acceptChunk(int chunkIndex, byte[] data) throws IOException;
 
     int readVerifiedBytes(long offset, byte[] buffer, int maxLength) throws IOException;
 
-    long getAvailablePrefixBytes();
+    // long getAvailablePrefixBytes(); это на будущее для стриминга, пока не актуально.
 
     boolean isComplete();
 

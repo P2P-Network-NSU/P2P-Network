@@ -6,7 +6,7 @@ import java.security.KeyStore;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import ru.nsu.p2p.common.http.ApiEndpoints;
+import ru.nsu.p2p.common.protocol.http.ApiEndpoints;
 import ru.nsu.p2p.tracker.http.handler.get_handlers.GetManifestEndpointHandler;
 import ru.nsu.p2p.tracker.http.handler.get_handlers.GetPeersEndpointHandler;
 import ru.nsu.p2p.tracker.http.handler.post_handlers.CatalogSearchEndpointHandler;

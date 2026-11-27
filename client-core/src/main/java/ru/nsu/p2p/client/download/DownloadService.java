@@ -1,11 +1,13 @@
 package ru.nsu.p2p.client.download;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import ru.nsu.p2p.common.api.TransferApi;
 import ru.nsu.p2p.common.transfer.DownloadRequest;
 import ru.nsu.p2p.common.transfer.TransferSnapshot;
 
-public interface DownloadService {
+public interface DownloadService extends TransferApi {
 
     CompletionStage<TransferSnapshot> start(DownloadRequest request);
 
@@ -19,7 +21,7 @@ public interface DownloadService {
 
     CompletionStage<List<TransferSnapshot>> list();
 
-    CompletionStage<String> saveCopy(String transferId, String targetPath);
+    CompletionStage<String> saveCopy(String transferId, Path targetPath);
 
     void prioritizeOffset(String transferId, long byteOffset);
 }

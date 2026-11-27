@@ -6,8 +6,5 @@ import ru.nsu.p2p.common.model.FileManifest;
 
 public interface ChunkAssemblerFactory {
 
-    ChunkAssembler create(
-        FileManifest manifest,
-        Path destination
-    ) throws IOException;
+    ChunkAssembler create(FileManifest manifest, Path destination) throws IOException;
 }

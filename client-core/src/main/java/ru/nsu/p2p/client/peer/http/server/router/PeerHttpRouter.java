@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import ru.nsu.p2p.client.peer.http.server.handler.PeerEndpointHandler;
 import ru.nsu.p2p.common.error.ClientOperationException;
-import ru.nsu.p2p.common.http.HttpStatuses;
+import ru.nsu.p2p.common.protocol.http.HttpStatuses;
 import tech.kwik.flupke.server.HttpRequestHandler;
 import tech.kwik.flupke.server.HttpServerRequest;
 import tech.kwik.flupke.server.HttpServerResponse;

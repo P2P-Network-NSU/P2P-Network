@@ -19,7 +19,7 @@ import ru.nsu.p2p.client.sharing.SharedFileProvider;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
-import ru.nsu.p2p.common.http.ApiEndpoints;
+import ru.nsu.p2p.common.protocol.http.ApiEndpoints;
 import ru.nsu.p2p.common.model.PeerAddress;
 import tech.kwik.core.log.SysOutLogger;
 import tech.kwik.core.server.ServerConnectionConfig;

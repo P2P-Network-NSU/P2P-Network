@@ -11,7 +11,7 @@ import javax.net.ssl.X509TrustManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.nsu.p2p.common.http.ApiEndpoints;
+import ru.nsu.p2p.common.protocol.http.ApiEndpoints;
 import ru.nsu.p2p.common.proto.tracker.PeerAddressDto;
 import ru.nsu.p2p.common.proto.tracker.PeerLeaseResponseDto;
 import ru.nsu.p2p.common.proto.tracker.RegisterPeerRequestDto;
