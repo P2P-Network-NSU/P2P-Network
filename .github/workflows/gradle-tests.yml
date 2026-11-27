@@ -2,7 +2,6 @@ name: Gradle tests
 
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
@@ -10,21 +9,63 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  build-linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v6
+      - name: Set up JDK 26
+        uses: actions/setup-java@v6
         with:
-          distribution: temurin
+          distribution: 'corretto'
           java-version: '26'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Prepare JavaFX display
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb xauth libgtk-3-0t64
 
-      - name: Run tests
-        run: xvfb-run -a ./gradlew --no-daemon test
+      - name: Build and Run tests
+        run: xvfb-run -a ./gradlew build --no-daemon
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-test-reports
+          if-no-files-found: ignore
+          path: |
+            */build/test-results/test/
+            */build/reports/tests/test/
+
+  core-tests-windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: corretto
+          java-version: '26'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test common and client-core
+        run: .\gradlew.bat --no-daemon --continue :common:test :client-core:test
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-core-test-reports
+          if-no-files-found: ignore
+          path: |
+            common/build/test-results/test/
+            common/build/reports/tests/test/
+            client-core/build/test-results/test/
+            client-core/build/reports/tests/test/
+

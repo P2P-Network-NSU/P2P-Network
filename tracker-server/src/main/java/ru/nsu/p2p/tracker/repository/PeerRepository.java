@@ -2,7 +2,6 @@ package ru.nsu.p2p.tracker.repository;
 
 import java.time.Instant;
 import java.util.List;
-
 import ru.nsu.p2p.common.model.PeerInfo;
 
 public interface PeerRepository {
