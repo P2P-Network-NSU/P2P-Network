@@ -127,15 +127,20 @@ final class AssemblyFiles implements AutoCloseable {
         }
     }
 
+//    Path publish() throws IOException {
+//        Path staged = Files.createTempFile(downloads, ".assembly-", ".tmp");
+//        try {
+//            Files.copy(part, staged, StandardCopyOption.REPLACE_EXISTING);
+//            verifyCompletedFile(staged);
+//            return publishAvailableName(staged);
+//        } finally {
+//            Files.deleteIfExists(staged);
+//        }
+//    }
+
     Path publish() throws IOException {
-        Path staged = Files.createTempFile(downloads, ".assembly-", ".tmp");
-        try {
-            Files.copy(part, staged, StandardCopyOption.REPLACE_EXISTING);
-            verifyCompletedFile(staged);
-            return publishAvailableName(staged);
-        } finally {
-            Files.deleteIfExists(staged);
-        }
+        verifyCompletedFile(part);
+        return publishAvailableName(part);
     }
 
     private void verifyCompletedFile(Path staged) throws IOException {
