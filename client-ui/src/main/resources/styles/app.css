@@ -201,3 +201,49 @@
 .status-bar.card {
     -fx-padding: -10 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Окно с разделом "Загрузки" */
+.downloads-view {
+    -fx-background-color: white;
+    -fx-padding: 24;
+    -fx-spacing: 16;
+    -fx-alignment: top-left;
+}
+
+/* Кнопка скачивания по имени и пиру */
+.download-file-peer {
+    -fx-border-width: 2px;
+    -fx-border-color: #EBECF0;
+    -fx-border-radius: 6px;
+}
+
+.name-file {
+    -fx-max-width: 600px;
+}
+
+.peer-ip {
+    -fx-max-width: 400px;
+}
+
+.peer-port {
+    -fx-max-width: 200px;
+}
