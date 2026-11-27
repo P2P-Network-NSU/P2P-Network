@@ -109,7 +109,8 @@ class FileAssemblerTest {
             Path existing = Files.writeString(root.resolve("downloads/report.pdf"), "original");
             Path result = api.finish();
 
-            assertEquals(existing.resolveSibling("report (1).pdf"), result);
+            assertEquals("report (1).pdf", result.getFileName().toString());
+            assertTrue(Files.isSameFile(existing.getParent(), result.getParent()));
             assertArrayEquals(contents, Files.readAllBytes(result));
             assertEquals("original", Files.readString(existing));
             assertEquals(result, api.finish());
