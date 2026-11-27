@@ -5,7 +5,7 @@ import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;
 
-import static ru.nsu.p2p.client.file.AssemblyErrors.error;
+import static ru.nsu.p2p.client.file.AssemblyErrors.createNonRetrayableClientError;
 import static ru.nsu.p2p.common.error.ErrorCode.*;
 
 final class ChunkLayout {
@@ -18,7 +18,7 @@ final class ChunkLayout {
 
     ChunkLayout(FileManifest manifest) {
         if (manifest == null) {
-            throw error(INVALID_ARGUMENT, "Требуется манифест");
+            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Требуется манифест");
         }
 
         id = manifest.fileId();
@@ -27,14 +27,14 @@ final class ChunkLayout {
 
         if (!HashUtils.isValidHash(id) || size < 0
             || manifest.chunkSizeBytes() != SIZE || !validName(name)) {
-            throw error(INCOMPATIBLE_MANIFEST, "Некорректный манифест");
+            throw createNonRetrayableClientError(INCOMPATIBLE_MANIFEST, "Некорректный манифест");
         }
 
         long count = size == 0 ? 0 : 1 + (size - 1) / SIZE;
         List<String> values = manifest.chunkHashes();
         if (values == null || count != values.size()
             || !values.stream().allMatch(HashUtils::isValidHash)) {
-            throw error(INCOMPATIBLE_MANIFEST, "Некорректный список SHA-256");
+            throw createNonRetrayableClientError(INCOMPATIBLE_MANIFEST, "Некорректный список SHA-256");
         }
 
         hashes = List.copyOf(values);
@@ -66,17 +66,17 @@ final class ChunkLayout {
 
     void checkIndex(int index) {
         if (index < 0 || index >= count()) {
-            throw error(INVALID_ARGUMENT, "Неверный индекс чанка: " + index);
+            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Неверный индекс чанка: " + index);
         }
     }
 
     void verify(int index, byte[] bytes) {
         checkIndex(index);
         if (bytes == null) {
-            throw error(INVALID_ARGUMENT, "Требуются данные чанка");
+            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Требуются данные чанка");
         }
         if (!matches(index, bytes)) {
-            throw error(HASH_MISMATCH, "Повреждён чанк " + index);
+            throw createNonRetrayableClientError(HASH_MISMATCH, "Повреждён чанк " + index);
         }
     }
 }

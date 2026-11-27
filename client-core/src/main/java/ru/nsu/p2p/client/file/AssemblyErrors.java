@@ -8,13 +8,13 @@ import ru.nsu.p2p.common.error.OperationError;
 final class AssemblyErrors {
     private AssemblyErrors() {}
 
-    static ClientOperationException error(ErrorCode code, String message) {
+    static ClientOperationException createNonRetrayableClientError(ErrorCode code, String message) {
         return new ClientOperationException(
             new OperationError(code, message, false)
         );
     }
 
-    static ClientOperationException io(String operation, IOException cause) {
+    static ClientOperationException createIOException(String operation, IOException cause) {
         var error = new OperationError(
             ErrorCode.IO_ERROR, operation + ": " + cause.getMessage(), false
         );

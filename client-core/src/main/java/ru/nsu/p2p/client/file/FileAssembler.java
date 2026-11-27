@@ -27,14 +27,14 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
     private FileAssembler(FileManifest manifest, Path temp, Path downloads, boolean resume) {
         layout = new ChunkLayout(manifest);
         if (temp == null || downloads == null) {
-            throw error(INVALID_ARGUMENT, "Требуются пути к каталогам");
+            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Требуются пути к каталогам");
         }
 
         try {
             files = new AssemblyFiles(layout, temp, downloads);
             received = openProgress(resume);
         } catch (IOException e) {
-            throw io("Открытие загрузки", e);
+            throw createIOException("Открытие загрузки", e);
         }
     }
 
@@ -65,7 +65,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
             confirmChunk(index);
             return true;
         } catch (IOException e) {
-            throw io("Сохранение чанка " + index, e);
+            throw createIOException("Сохранение чанка " + index, e);
         }
     }
 
@@ -85,7 +85,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
         requireActive();
         if (buffer == null || offset < 0 || offset > layout.size
             || maxLength < 0 || maxLength > buffer.length) {
-            throw error(INVALID_ARGUMENT, "Некорректный диапазон чтения");
+            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Некорректный диапазон чтения");
         }
 
         if (offset == layout.size || maxLength == 0) {
@@ -101,7 +101,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
             }
             return length;
         } catch (IOException e) {
-            throw io("Чтение проверенных данных", e);
+            throw createIOException("Чтение проверенных данных", e);
         }
     }
 
@@ -123,7 +123,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
         requireOpen();
 
         if (!isComplete()) {
-            throw error(INVALID_STATE, "Не все чанки получены");
+            throw createNonRetrayableClientError(INVALID_STATE, "Не все чанки получены");
         }
 
         try {
@@ -133,7 +133,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
             discardAndClose();
             return published;
         } catch (IOException e) {
-            throw io("Завершение загрузки", e);
+            throw createIOException("Завершение загрузки", e);
         }
     }
 
@@ -145,7 +145,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
         try {
             discardAndClose();
         } catch (IOException e) {
-            throw io("Удаление временных файлов", e);
+            throw createIOException("Удаление временных файлов", e);
         }
     }
 
@@ -165,20 +165,20 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
             files.close();
             closed = true;
         } catch (IOException e) {
-            throw io("Закрытие загрузки", e);
+            throw createIOException("Закрытие загрузки", e);
         }
     }
 
     private void requireOpen() {
         if (closed) {
-            throw error(INVALID_STATE, "Сборщик закрыт");
+            throw createNonRetrayableClientError(INVALID_STATE, "Сборщик закрыт");
         }
     }
 
     private void requireActive() {
         requireOpen();
         if (published != null) {
-            throw error(INVALID_STATE, "Файл уже опубликован");
+            throw createNonRetrayableClientError(INVALID_STATE, "Файл уже опубликован");
         }
     }
 }

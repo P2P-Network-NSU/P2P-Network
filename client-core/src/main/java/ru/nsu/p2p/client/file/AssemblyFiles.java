@@ -14,7 +14,7 @@ import java.util.BitSet;
 import ru.nsu.p2p.common.utils.HashUtils;
 
 import static java.nio.file.StandardOpenOption.*;
-import static ru.nsu.p2p.client.file.AssemblyErrors.error;
+import static ru.nsu.p2p.client.file.AssemblyErrors.createNonRetrayableClientError;
 import static ru.nsu.p2p.common.error.ErrorCode.*;
 
 final class AssemblyFiles implements AutoCloseable {
@@ -31,7 +31,7 @@ final class AssemblyFiles implements AutoCloseable {
         Path work = Files.createDirectories(temp).toRealPath();
 
         if (Files.isSameFile(work, this.downloads)) {
-            throw error(INVALID_ARGUMENT, "Разделите temp и downloads");
+            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Разделите temp и downloads");
         }
 
         part = work.resolve(layout.id + ".part");
@@ -48,9 +48,9 @@ final class AssemblyFiles implements AutoCloseable {
                     return channel;
                 }
             } catch (OverlappingFileLockException occupied) {
-                throw error(INVALID_STATE, "Загрузка уже открыта");
+                throw createNonRetrayableClientError(INVALID_STATE, "Загрузка уже открыта");
             }
-            throw error(INVALID_STATE, "Загрузка уже открыта");
+            throw createNonRetrayableClientError(INVALID_STATE, "Загрузка уже открыта");
         } catch (IOException | RuntimeException failure) {
             try {
                 channel.close();
@@ -63,7 +63,7 @@ final class AssemblyFiles implements AutoCloseable {
 
     BitSet create() throws IOException {
         if (Files.exists(state)) {
-            throw error(INVALID_STATE, "Существует сохранённая загрузка");
+            throw createNonRetrayableClientError(INVALID_STATE, "Существует сохранённая загрузка");
         }
 
         Files.createFile(part);
@@ -139,7 +139,7 @@ final class AssemblyFiles implements AutoCloseable {
     private void verifyCompletedFile(Path staged) throws IOException {
         if (Files.size(staged) != layout.size
             || !layout.id.equals(HashUtils.computeSha256(staged))) {
-            throw error(HASH_MISMATCH, "Итоговый файл не соответствует манифесту");
+            throw createNonRetrayableClientError(HASH_MISMATCH, "Итоговый файл не соответствует манифесту");
         }
     }
 
