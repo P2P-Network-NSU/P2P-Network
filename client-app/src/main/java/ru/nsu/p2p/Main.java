@@ -18,15 +18,37 @@ public final class Main {
 
     public static void main(String[] args) {
         P2PClientCore core = new P2PClientCore();
-        int peerPort = Integer.getInteger("p2p.port", DEFAULT_PEER_PORT);
+        int peerPort = readPeerPort(args);
         Path sharedDirectory = resolveSharedDirectory();
 
         try (
             var downloads = new Http3PeerDownloadApi();
             var peerServer = startPeerServer(peerPort, sharedDirectory)
         ) {
-            P2pApplication.launchUi(args, core, downloads);
+            P2pApplication.launchUi(args, core, downloads, peerPort);
         }
+    }
+
+    private static int readPeerPort(String[] args) {
+        String prefix = "--peerPort=";
+        String value = Integer.toString(DEFAULT_PEER_PORT);
+
+        for (String arg : args) {
+            if (arg.startsWith(prefix)) {
+                value = arg.substring(prefix.length());
+            }
+        }
+
+        try {
+            int port = Integer.parseInt(value);
+            if (port >= 1 && port <= 65535) {
+                return port;
+            }
+        } catch (NumberFormatException ignored) {
+            // Ниже общая ошибка для неверного порта.
+        }
+
+        throw new IllegalArgumentException("--peerPort должен быть целым числом от 1 до 65535");
     }
 
     private static Path resolveSharedDirectory() {

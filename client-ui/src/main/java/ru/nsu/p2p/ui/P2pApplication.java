@@ -68,12 +68,14 @@ public final class P2pApplication extends Application {
 
     private static ClientLifecycle lifecycle;
     private static PeerDownloadApi downloadApi;
+    private static int peerPort;
 
     public static void launchUi(
-            String[] args, ClientLifecycle lifecycle, PeerDownloadApi downloadApi
+            String[] args, ClientLifecycle lifecycle, PeerDownloadApi downloadApi, int peerPort
     ) {
         P2pApplication.lifecycle = lifecycle;
         P2pApplication.downloadApi = downloadApi;
+        P2pApplication.peerPort = peerPort;
         Application.launch(P2pApplication.class, args);
     }
 
@@ -106,7 +108,7 @@ public final class P2pApplication extends Application {
             );
             PeerAddress myAddress = new PeerAddress(
                     args.getOrDefault("peerHost", "localhost"),
-                    readPort(args.getOrDefault("peerPort", "45501"), "peerPort")
+                    peerPort
             );
 
             Path clientDirectory = Path.of(System.getProperty("user.home"), ".p2p-client-NSU");

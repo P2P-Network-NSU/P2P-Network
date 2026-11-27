@@ -11,10 +11,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
 import ru.nsu.p2p.common.model.FileManifest;
+import ru.nsu.p2p.common.protocol.ProtocolRules;
 
 public final class DirectorySharedFileProvider implements SharedFileProvider {
 
-    public static final long DEFAULT_CHUNK_SIZE_BYTES = 256 * 1024L;
+    public static final long DEFAULT_CHUNK_SIZE_BYTES = ProtocolRules.CHUNK_SIZE_BYTES;
 
     private final Path sharedDirectory;
     private final long chunkSizeBytes;
