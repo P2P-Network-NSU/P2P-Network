@@ -14,7 +14,7 @@ import ru.nsu.p2p.common.error.OperationError;
 import ru.nsu.p2p.common.utils.HashUtils;
 import ru.nsu.p2p.common.utils.HashUtils.Sha256Hasher;
 
-public class Sha256FileHashProvider implements FileHashProvider {
+public final class Sha256FileHashProvider implements FileHashProvider {
 
     @Override
     public FileHashes build(Path file, int chunkSizeBytes) {

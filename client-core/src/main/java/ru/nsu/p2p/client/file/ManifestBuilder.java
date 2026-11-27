@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 
-public class ManifestBuilder {
+public final class ManifestBuilder {
 
     private final FileHashProvider hashProvider;
 
