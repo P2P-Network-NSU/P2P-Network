@@ -5,6 +5,7 @@ import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;
 
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
 import static ru.nsu.p2p.client.file.AssemblyErrors.createNonRetrayableClientError;
 import static ru.nsu.p2p.common.error.ErrorCode.*;
 
@@ -18,7 +19,7 @@ final class ChunkLayout {
 
     ChunkLayout(FileManifest manifest) {
         if (manifest == null) {
-            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Требуется манифест");
+            throw createInvalidArgumentException("Требуется манифест");
         }
 
         id = manifest.fileId();
@@ -66,14 +67,14 @@ final class ChunkLayout {
 
     void checkIndex(int index) {
         if (index < 0 || index >= count()) {
-            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Неверный индекс чанка: " + index);
+            throw createInvalidArgumentException("Неверный индекс чанка: " + index);
         }
     }
 
     void verify(int index, byte[] bytes) {
         checkIndex(index);
         if (bytes == null) {
-            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Требуются данные чанка");
+            throw createInvalidArgumentException("Требуются данные чанка");
         }
         if (!matches(index, bytes)) {
             throw createNonRetrayableClientError(HASH_MISMATCH, "Повреждён чанк " + index);

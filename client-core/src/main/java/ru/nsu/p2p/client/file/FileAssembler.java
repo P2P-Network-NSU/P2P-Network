@@ -5,6 +5,8 @@ import java.nio.file.Path;
 import java.util.BitSet;
 import ru.nsu.p2p.common.model.FileManifest;
 
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidStateException;
 import static ru.nsu.p2p.client.file.AssemblyErrors.*;
 import static ru.nsu.p2p.common.error.ErrorCode.*;
 
@@ -27,7 +29,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
     private FileAssembler(FileManifest manifest, Path temp, Path downloads, boolean resume) {
         layout = new ChunkLayout(manifest);
         if (temp == null || downloads == null) {
-            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Требуются пути к каталогам");
+            throw createInvalidArgumentException("Требуются пути к каталогам");
         }
 
         try {
@@ -85,7 +87,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
         requireActive();
         if (buffer == null || offset < 0 || offset > layout.size
             || maxLength < 0 || maxLength > buffer.length) {
-            throw createNonRetrayableClientError(INVALID_ARGUMENT, "Некорректный диапазон чтения");
+            throw createInvalidArgumentException("Некорректный диапазон чтения");
         }
 
         if (offset == layout.size || maxLength == 0) {
@@ -123,7 +125,7 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
         requireOpen();
 
         if (!isComplete()) {
-            throw createNonRetrayableClientError(INVALID_STATE, "Не все чанки получены");
+            throw createInvalidStateException("Не все чанки получены");
         }
 
         try {
@@ -155,7 +157,9 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
         closed = true;
     }
 
-    /** Пауза. Для продолжения используется resume(). */
+    /**
+     * Пауза. Для продолжения используется resume().
+     */
     @Override
     public synchronized void close() {
         if (closed) {
@@ -171,14 +175,14 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
 
     private void requireOpen() {
         if (closed) {
-            throw createNonRetrayableClientError(INVALID_STATE, "Сборщик закрыт");
+            throw createInvalidStateException("Сборщик закрыт");
         }
     }
 
     private void requireActive() {
         requireOpen();
         if (published != null) {
-            throw createNonRetrayableClientError(INVALID_STATE, "Файл уже опубликован");
+            throw createInvalidStateException("Файл уже опубликован");
         }
     }
 }
