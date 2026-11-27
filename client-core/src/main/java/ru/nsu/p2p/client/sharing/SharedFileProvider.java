@@ -8,8 +8,6 @@ public interface SharedFileProvider {
 
     Optional<FileManifest> getManifest(String fileId);
 
-    byte[] readChunk(
-        String fileId,
-        int chunkIndex
-    ) throws IOException;
+    byte[] readChunk(String fileId, int chunkIndex) throws IOException;
+
 }
