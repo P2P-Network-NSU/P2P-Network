@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.manifest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import ru.nsu.p2p.client.file.FileHashProvider;
+import ru.nsu.p2p.client.file.hashes.FileHashes;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;

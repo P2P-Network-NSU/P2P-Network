@@ -1,4 +1,12 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.assembler;
+
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidStateException;
+import static ru.nsu.p2p.client.file.assembler.AssemblyErrors.createNonRetrayableClientError;
+import static ru.nsu.p2p.common.error.ErrorCode.HASH_MISMATCH;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -9,23 +17,17 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.BitSet;
 import ru.nsu.p2p.common.utils.HashUtils;
 
-import static java.nio.file.StandardOpenOption.*;
-import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
-import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidStateException;
-import static ru.nsu.p2p.client.file.AssemblyErrors.createNonRetrayableClientError;
-import static ru.nsu.p2p.common.error.ErrorCode.*;
-
 final class AssemblyFiles implements AutoCloseable {
+
+    final ChunkCheckpoint checkpoint;
     private final ChunkLayout layout;
     private final Path downloads;
     private final Path part;
     private final Path state;
     private final FileChannel lockChannel;
-    final ChunkCheckpoint checkpoint;
 
     AssemblyFiles(ChunkLayout layout, Path temp, Path downloads) throws IOException {
         this.layout = layout;
@@ -146,12 +148,13 @@ final class AssemblyFiles implements AutoCloseable {
     private void verifyCompletedFile(Path staged) throws IOException {
         if (Files.size(staged) != layout.size
             || !layout.id.equals(HashUtils.computeSha256(staged))) {
-            throw createNonRetrayableClientError(HASH_MISMATCH, "Итоговый файл не соответствует манифесту");
+            throw createNonRetrayableClientError(HASH_MISMATCH,
+                "Итоговый файл не соответствует манифесту");
         }
     }
 
     private Path publishAvailableName(Path staged) throws IOException {
-        for (int copy = 0 ;; copy++) {
+        for (int copy = 0; ; copy++) {
             Path target = downloads.resolve(copyName(copy));
             try {
                 return Files.createLink(target, staged);

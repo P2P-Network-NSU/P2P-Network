@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.hashes;
 
 import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
 
@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import ru.nsu.p2p.client.file.FileHashProvider;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
@@ -19,11 +20,13 @@ public final class Sha256FileHashProvider implements FileHashProvider {
     @Override
     public FileHashes build(Path file, int chunkSizeBytes) {
         if (file == null || chunkSizeBytes <= 0) {
-            throw createInvalidArgumentException("Передан null вместо валидного путя или размер чанка недопустимый");
+            throw createInvalidArgumentException(
+                "Передан null вместо валидного путя или размер чанка недопустимый");
         }
 
         if (!Files.isRegularFile(file)) {
-            var error = new OperationError(ErrorCode.IO_ERROR, "Не регулярный файл: " + file, false);
+            var error = new OperationError(ErrorCode.IO_ERROR, "Не регулярный файл: " + file,
+                false);
             throw new ClientOperationException(error);
         }
 

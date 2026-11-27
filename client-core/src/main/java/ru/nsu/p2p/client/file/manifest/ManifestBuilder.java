@@ -1,6 +1,8 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.manifest;
 
 import java.nio.file.Path;
+import ru.nsu.p2p.client.file.FileHashProvider;
+import ru.nsu.p2p.client.file.hashes.FileHashes;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 

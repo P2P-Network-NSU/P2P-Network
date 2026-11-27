@@ -1,15 +1,17 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.assembler;
+
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
+import static ru.nsu.p2p.client.file.assembler.AssemblyErrors.createNonRetrayableClientError;
+import static ru.nsu.p2p.common.error.ErrorCode.HASH_MISMATCH;
+import static ru.nsu.p2p.common.error.ErrorCode.INCOMPATIBLE_MANIFEST;
 
 import java.util.List;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;
 
-import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
-import static ru.nsu.p2p.client.file.AssemblyErrors.createNonRetrayableClientError;
-import static ru.nsu.p2p.common.error.ErrorCode.*;
-
 final class ChunkLayout {
+
     static final int SIZE = ProtocolRules.CHUNK_SIZE_BYTES;
 
     final String id;
@@ -35,7 +37,8 @@ final class ChunkLayout {
         List<String> values = manifest.chunkHashes();
         if (values == null || count != values.size()
             || !values.stream().allMatch(HashUtils::isValidHash)) {
-            throw createNonRetrayableClientError(INCOMPATIBLE_MANIFEST, "Некорректный список SHA-256");
+            throw createNonRetrayableClientError(INCOMPATIBLE_MANIFEST,
+                "Некорректный список SHA-256");
         }
 
         hashes = List.copyOf(values);

@@ -1,15 +1,14 @@
-package ru.nsu.p2p.client.file;
-
-import ru.nsu.p2p.client.file.FileHashes;
-import ru.nsu.p2p.common.model.FileManifest;
-import ru.nsu.p2p.common.protocol.ProtocolRules;
-import ru.nsu.p2p.common.utils.HashUtils;
+package ru.nsu.p2p.client.file.hashes;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import ru.nsu.p2p.client.file.assembler.FileAssembler;
+import ru.nsu.p2p.common.model.FileManifest;
+import ru.nsu.p2p.common.protocol.ProtocolRules;
+import ru.nsu.p2p.common.utils.HashUtils;
 
 public final class LargeFileMemoryProbe {
 
@@ -18,7 +17,7 @@ public final class LargeFileMemoryProbe {
     private LargeFileMemoryProbe() {
     }
 
-    public static void main(String[] args) throws IOException {
+    static void main(String[] args) throws IOException {
         Path workDirectory = Path.of(args[0]);
         Path source = workDirectory.resolve("source.bin");
         Path targetDirectory = workDirectory.resolve("result");
@@ -32,19 +31,19 @@ public final class LargeFileMemoryProbe {
         FileHashes hashes = new Sha256FileHashProvider().build(source, chunkSize);
 
         FileManifest manifest = new FileManifest(
-                hashes.fileId(),
-                "large.bin",
-                FILE_SIZE,
-                chunkSize,
-                hashes.chunkHashes(),
-                "application/octet-stream"
+            hashes.fileId(),
+            "large.bin",
+            FILE_SIZE,
+            chunkSize,
+            hashes.chunkHashes(),
+            "application/octet-stream"
         );
 
         int receivedCount = 0;
 
         try (InputStream input = Files.newInputStream(source);
-             FileAssembler assembler =
-                     new FileAssembler(manifest, workDirectory.resolve("temp"), targetDirectory)) {
+            FileAssembler assembler =
+                new FileAssembler(manifest, workDirectory.resolve("temp"), targetDirectory)) {
 
             while (true) {
                 byte[] chunk = input.readNBytes(chunkSize);

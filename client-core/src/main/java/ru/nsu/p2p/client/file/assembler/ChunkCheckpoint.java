@@ -1,4 +1,8 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.assembler;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -9,11 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.BitSet;
 
-import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
-
 final class ChunkCheckpoint {
+
     private static final int MAGIC = 0x50324153;
     private static final int VERSION = 1;
 

@@ -1,4 +1,4 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.assembler;
 
 import java.io.IOException;
 import ru.nsu.p2p.common.error.ClientOperationException;
@@ -6,7 +6,9 @@ import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.error.OperationError;
 
 final class AssemblyErrors {
-    private AssemblyErrors() {}
+
+    private AssemblyErrors() {
+    }
 
     static ClientOperationException createNonRetrayableClientError(ErrorCode code, String message) {
         return new ClientOperationException(

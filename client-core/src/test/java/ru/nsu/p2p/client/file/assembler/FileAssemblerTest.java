@@ -1,4 +1,16 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.assembler;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static ru.nsu.p2p.common.error.ErrorCode.HASH_MISMATCH;
+import static ru.nsu.p2p.common.error.ErrorCode.INCOMPATIBLE_MANIFEST;
+import static ru.nsu.p2p.common.error.ErrorCode.INVALID_ARGUMENT;
+import static ru.nsu.p2p.common.error.ErrorCode.INVALID_STATE;
+import static ru.nsu.p2p.common.error.ErrorCode.IO_ERROR;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,29 +25,33 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import ru.nsu.p2p.client.file.ChunkAssembler;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 import ru.nsu.p2p.common.utils.HashUtils;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static ru.nsu.p2p.common.error.ErrorCode.*;
-
 class FileAssemblerTest {
-    @TempDir
-    Path root;
 
     private final byte[] first = new byte[ProtocolRules.CHUNK_SIZE_BYTES];
     private final byte[] last = {1, 2, 3};
     private final byte[] contents = combine(first, last);
     private final FileManifest manifest =
         manifest(HashUtils.computeSha256(contents), "report.pdf");
+    @TempDir
+    Path root;
 
     private static byte[] combine(byte[] a, byte[] b) {
         byte[] result = Arrays.copyOf(a, a.length + b.length);
         System.arraycopy(b, 0, result, a.length, b.length);
         return result;
+    }
+
+    private static ClientOperationException expect(ErrorCode code, Runnable action) {
+        var failure = assertThrows(ClientOperationException.class, action::run);
+        assertEquals(code, failure.getError().code());
+        return failure;
     }
 
     private FileManifest manifest(String id, String name) {
@@ -56,12 +72,6 @@ class FileAssemblerTest {
 
     private FileAssembler resume() {
         return FileAssembler.resume(manifest, root.resolve("temp"), root.resolve("downloads"));
-    }
-
-    private static ClientOperationException expect(ErrorCode code, Runnable action) {
-        var failure = assertThrows(ClientOperationException.class, action::run);
-        assertEquals(code, failure.getError().code());
-        return failure;
     }
 
     @Test

@@ -1,4 +1,12 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.assembler;
+
+import static java.nio.file.StandardOpenOption.WRITE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static ru.nsu.p2p.common.protocol.ProtocolRules.CHUNK_SIZE_BYTES;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -10,20 +18,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import ru.nsu.p2p.client.file.hashes.Sha256FileHashProvider;
+import ru.nsu.p2p.client.file.manifest.ManifestBuilder;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.error.ErrorCode;
 import ru.nsu.p2p.common.model.FileManifest;
 
-import static java.nio.file.StandardOpenOption.WRITE;
-import static org.junit.jupiter.api.Assertions.*;
-import static ru.nsu.p2p.common.protocol.ProtocolRules.CHUNK_SIZE_BYTES;
-
 class FileAssemblerRecoveryTest {
-    @TempDir Path root;
+
+    @TempDir
+    Path root;
 
     private FileManifest prepare(int size) throws IOException {
         Path file = Files.write(root.resolve("source.bin"), new byte[size]);
-        return new ManifestBuilder(new Sha256FileHashProvider()).build(file, "application/octet-stream");
+        return new ManifestBuilder(new Sha256FileHashProvider()).build(file,
+            "application/octet-stream");
     }
 
     private FileAssembler create(FileManifest manifest) {
@@ -70,7 +79,7 @@ class FileAssemblerRecoveryTest {
         byte[] original = Files.readAllBytes(state);
         FileManifest supplied = mode.equals("different-manifest")
             ? new FileManifest(manifest.fileId(), manifest.originalName(), CHUNK_SIZE_BYTES - 1,
-                manifest.chunkSizeBytes(), manifest.chunkHashes(), manifest.mediaType())
+            manifest.chunkSizeBytes(), manifest.chunkHashes(), manifest.mediaType())
             : manifest;
         if (mode.equals("truncated")) {
             Files.write(state, Arrays.copyOf(original, original.length - 1));

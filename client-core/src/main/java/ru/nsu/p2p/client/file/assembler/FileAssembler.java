@@ -1,16 +1,17 @@
-package ru.nsu.p2p.client.file;
+package ru.nsu.p2p.client.file.assembler;
+
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
+import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidStateException;
+import static ru.nsu.p2p.client.file.assembler.AssemblyErrors.createIOException;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.BitSet;
+import ru.nsu.p2p.client.file.ChunkAssembler;
 import ru.nsu.p2p.common.model.FileManifest;
 
-import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidArgumentException;
-import static ru.nsu.p2p.client.error.ClientOperationExceptions.createInvalidStateException;
-import static ru.nsu.p2p.client.file.AssemblyErrors.*;
-import static ru.nsu.p2p.common.error.ErrorCode.*;
-
 public final class FileAssembler implements ChunkAssembler, AutoCloseable {
+
     private final ChunkLayout layout;
     private final AssemblyFiles files;
     private final BitSet received;
@@ -20,10 +21,6 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
 
     public FileAssembler(FileManifest manifest, Path temp, Path downloads) {
         this(manifest, temp, downloads, false);
-    }
-
-    public static FileAssembler resume(FileManifest manifest, Path temp, Path downloads) {
-        return new FileAssembler(manifest, temp, downloads, true);
     }
 
     private FileAssembler(FileManifest manifest, Path temp, Path downloads, boolean resume) {
@@ -38,6 +35,10 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
         } catch (IOException e) {
             throw createIOException("Открытие загрузки", e);
         }
+    }
+
+    public static FileAssembler resume(FileManifest manifest, Path temp, Path downloads) {
+        return new FileAssembler(manifest, temp, downloads, true);
     }
 
     private BitSet openProgress(boolean resume) throws IOException {
@@ -79,8 +80,8 @@ public final class FileAssembler implements ChunkAssembler, AutoCloseable {
     }
 
     /**
-     * Читает подряд, начиная с offset, до первого отсутствующего чанка.
-     * Возвращает 0, если первый байт ещё недоступен или достигнут конец файла.
+     * Читает подряд, начиная с offset, до первого отсутствующего чанка. Возвращает 0, если первый
+     * байт ещё недоступен или достигнут конец файла.
      */
     @Override
     public synchronized int readVerifiedBytes(long offset, byte[] buffer, int maxLength) {
