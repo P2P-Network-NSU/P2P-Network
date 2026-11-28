@@ -6,13 +6,13 @@ import ru.nsu.p2p.common.transfer.ShareState;
 /**
  * Хранит состояние раздачи уже подготовленного файла.
  */
-public final class ShareSession {
+final class ShareSession {
 
     private final SharedFile file;
     private final String shareId;
     private volatile ShareState state;
 
-    public ShareSession(String shareId, SharedFile file) {
+    ShareSession(String shareId, SharedFile file) {
         if (shareId == null || shareId.isBlank() || file == null) {
             throw ClientOperationExceptions.createInvalidArgumentException(
                 "Переданы некорректные параметры в конструктор ShareSession"
@@ -24,23 +24,23 @@ public final class ShareSession {
         this.state = ShareState.SHARING;
     }
 
-    public void resume() {
+    void resume() {
         state = ShareState.SHARING;
     }
 
-    public String getShareId() {
+    String getShareId() {
         return shareId;
     }
 
-    public SharedFile getFile() {
+    SharedFile getFile() {
         return file;
     }
 
-    public ShareState getState() {
+    ShareState getState() {
         return state;
     }
 
-    public void stop() {
+    void stop() {
         state = ShareState.STOPPED;
     }
 }

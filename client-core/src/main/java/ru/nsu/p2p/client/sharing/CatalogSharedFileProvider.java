@@ -10,7 +10,7 @@ public final class CatalogSharedFileProvider implements SharedFileProvider{
     private final ShareSessionCatalog catalog;
     private final SharedFileReader reader;
 
-    public CatalogSharedFileProvider(ShareSessionCatalog catalog, SharedFileReader reader) {
+    CatalogSharedFileProvider(ShareSessionCatalog catalog, SharedFileReader reader) {
         if (catalog == null || reader == null) {
             throw ClientOperationExceptions.createInvalidArgumentException(
                 "Переданы невалидные аргументы в конструктор CatalogSharedFileProvider"

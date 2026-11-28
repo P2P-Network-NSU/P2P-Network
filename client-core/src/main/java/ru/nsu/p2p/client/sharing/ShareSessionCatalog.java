@@ -11,11 +11,11 @@ import ru.nsu.p2p.common.transfer.ShareState;
 /**
  * Хранит зарегистрированные сессии раздачи.
  */
-public final class ShareSessionCatalog {
+final class ShareSessionCatalog {
 
     private final ConcurrentMap<String, ShareSession> catalog;
 
-    public ShareSessionCatalog() {
+    ShareSessionCatalog() {
         this.catalog = new ConcurrentHashMap<>();
     }
 
@@ -57,7 +57,7 @@ public final class ShareSessionCatalog {
         return Optional.empty();
     }
 
-    public Set<String> getActiveFileIds() {
+    Set<String> getActiveFileIds() {
         return catalog.values().stream()
             .filter(session -> session.getState() == ShareState.SHARING)
             .map(session -> session.getFile().manifest().fileId())

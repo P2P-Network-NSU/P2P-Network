@@ -7,9 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import ru.nsu.p2p.client.error.ClientOperationExceptions;
 
-public final class SharedFileReader {
+final class SharedFileReader {
 
-    public byte[] readChunk(SharedFile file, int chunkIndex) throws IOException {
+    byte[] readChunk(SharedFile file, int chunkIndex) throws IOException {
         if (file == null) {
             throw ClientOperationExceptions.createInvalidArgumentException(
                 "Передан null вместо валидного файла"
