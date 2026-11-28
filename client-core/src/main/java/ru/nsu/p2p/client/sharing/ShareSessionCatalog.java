@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import ru.nsu.p2p.client.error.ClientOperationExceptions;
+import ru.nsu.p2p.common.transfer.ShareState;
 
 /**
  * Хранит зарегистрированные сессии раздачи.
@@ -35,5 +36,22 @@ public final class ShareSessionCatalog {
         }
 
         return Optional.ofNullable(catalog.get(shareId));
+    }
+
+    Optional<SharedFile> findActiveFileById(String fileId) {
+        if (fileId == null || fileId.isBlank()) {
+            throw ClientOperationExceptions.createInvalidArgumentException("Передан пустой fileId");
+        }
+
+        for (var session : catalog.values()){
+            if (
+                session.getFile().manifest().fileId().equals(fileId)
+                && session.getState() == ShareState.SHARING
+            ) {
+                return Optional.of(session.getFile());
+            }
+        }
+
+        return Optional.empty();
     }
 }

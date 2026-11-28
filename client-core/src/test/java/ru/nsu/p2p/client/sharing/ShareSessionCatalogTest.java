@@ -43,6 +43,30 @@ class ShareSessionCatalogTest {
         assertSame(original, catalog.findByShareId("share-1").orElseThrow());
     }
 
+    @Test
+    void findsActiveFileByManifestId() {
+        SharedFile file = sampleFile();
+        catalog.register(new ShareSession("share-1", file));
+
+        assertSame(file, catalog.findActiveFileById(file.manifest().fileId()).orElseThrow());
+        assertTrue(catalog.findActiveFileById("share-1").isEmpty());
+    }
+
+    @Test
+    void fileAvailabilityFollowsSessionState() {
+        SharedFile file = sampleFile();
+        ShareSession session = new ShareSession("share-1", file);
+        catalog.register(session);
+        String fileId = file.manifest().fileId();
+
+        session.stop();
+        assertTrue(catalog.findActiveFileById(fileId).isEmpty());
+        assertSame(session, catalog.findByShareId("share-1").orElseThrow());
+
+        session.resume();
+        assertSame(file, catalog.findActiveFileById(fileId).orElseThrow());
+    }
+
     private static SharedFile sampleFile() {
         String hash = "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb";
         FileManifest manifest = new FileManifest(
