@@ -1,8 +1,10 @@
 package ru.nsu.p2p.client.sharing;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import ru.nsu.p2p.client.error.ClientOperationExceptions;
 import ru.nsu.p2p.common.transfer.ShareState;
 
@@ -54,4 +56,12 @@ public final class ShareSessionCatalog {
 
         return Optional.empty();
     }
+
+    public Set<String> getActiveFileIds() {
+        return catalog.values().stream()
+            .filter(session -> session.getState() == ShareState.SHARING)
+            .map(session -> session.getFile().manifest().fileId())
+            .collect(Collectors.toSet());
+    }
+
 }

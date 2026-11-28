@@ -1,11 +1,13 @@
 package ru.nsu.p2p.client.sharing;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.model.FileManifest;
@@ -65,6 +67,42 @@ class ShareSessionCatalogTest {
 
         session.resume();
         assertSame(file, catalog.findActiveFileById(fileId).orElseThrow());
+    }
+
+    @Test
+    void activeFileIdsReflectPauseAndResume() {
+        SharedFile file = sampleFile();
+        String fileId = file.manifest().fileId();
+        ShareSession session = new ShareSession("share-1", file);
+        catalog.register(session);
+
+        Set<String> beforeStop = catalog.getActiveFileIds();
+        assertEquals(Set.of(fileId), beforeStop);
+
+        session.stop();
+        assertTrue(catalog.getActiveFileIds().isEmpty());
+        assertEquals(Set.of(fileId), beforeStop);
+
+        session.resume();
+        assertEquals(Set.of(fileId), catalog.getActiveFileIds());
+    }
+
+    @Test
+    void fileStaysActiveWhileAtLeastOneSessionSharesIt() {
+        SharedFile file = sampleFile();
+        String fileId = file.manifest().fileId();
+        ShareSession first = new ShareSession("share-1", file);
+        ShareSession second = new ShareSession("share-2", file);
+        catalog.register(first);
+        catalog.register(second);
+
+        assertEquals(Set.of(fileId), catalog.getActiveFileIds());
+
+        first.stop();
+        assertEquals(Set.of(fileId), catalog.getActiveFileIds());
+
+        second.stop();
+        assertTrue(catalog.getActiveFileIds().isEmpty());
     }
 
     private static SharedFile sampleFile() {
