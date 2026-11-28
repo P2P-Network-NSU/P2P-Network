@@ -5,12 +5,13 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import ru.nsu.p2p.client.error.ClientOperationExceptions;
 
 public final class SharedFileReader {
 
     public byte[] readChunk(SharedFile file, int chunkIndex) throws IOException {
         if (file == null) {
-            throw new IllegalArgumentException(
+            throw ClientOperationExceptions.createInvalidArgumentException(
                 "Передан null вместо валидного файла"
             );
         }
@@ -20,7 +21,7 @@ public final class SharedFileReader {
         long chunksCount = (size + chunkSize - 1) / chunkSize;
 
         if (0 > chunkIndex || chunkIndex >= chunksCount) {
-            throw new IllegalArgumentException(
+            throw ClientOperationExceptions.createInvalidArgumentException(
                 "Некорректный индекс чанка"
             );
         }

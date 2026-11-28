@@ -13,6 +13,7 @@ import java.util.HexFormat;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import ru.nsu.p2p.common.error.ClientOperationException;
 import ru.nsu.p2p.common.model.FileManifest;
 import ru.nsu.p2p.common.protocol.ProtocolRules;
 
@@ -48,8 +49,8 @@ class SharedFileReaderTest {
     void rejectsIndexesOutsideManifest() throws IOException {
         SharedFile file = writeSharedFile(sampleContent());
 
-        assertThrows(IllegalArgumentException.class, () -> reader.readChunk(file, -1));
-        assertThrows(IllegalArgumentException.class, () -> reader.readChunk(file, 2));
+        assertThrows(ClientOperationException.class, () -> reader.readChunk(file, -1));
+        assertThrows(ClientOperationException.class, () -> reader.readChunk(file, 2));
     }
 
     @Test
@@ -63,7 +64,7 @@ class SharedFileReaderTest {
         );
         SharedFile file = new SharedFile(manifest, path, "sample", "");
 
-        assertThrows(IllegalArgumentException.class, () -> reader.readChunk(file, 1));
+        assertThrows(ClientOperationException.class, () -> reader.readChunk(file, 1));
     }
 
     private static byte[] sampleContent() {
