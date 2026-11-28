@@ -5,6 +5,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import ru.nsu.p2p.client.error.ClientOperationExceptions;
 
+/**
+ * Хранит зарегистрированные сессии раздачи.
+ */
 public final class ShareSessionCatalog {
 
     private final ConcurrentMap<String, ShareSession> catalog;
