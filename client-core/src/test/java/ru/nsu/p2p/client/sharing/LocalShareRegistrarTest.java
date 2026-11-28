@@ -6,7 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -115,5 +120,67 @@ class LocalShareRegistrarTest {
         } finally {
             server.stop().toCompletableFuture().join();
         }
+    }
+
+    @Test
+    void refreshDiscoversFilesAddedBetweenScans() throws IOException {
+        SharedDirectoryScanner scanner = new SharedDirectoryScanner(sharedDirectory, registrar);
+
+        scanner.refresh();
+        assertTrue(catalog.getActiveFileIds().isEmpty());
+
+        Files.write(sharedDirectory.resolve("a.txt"), new byte[] {'a'});
+        scanner.refresh();
+
+        assertArrayEquals(new byte[] {'a'}, provider.readChunk(SHA256_OF_A, 0));
+    }
+
+    @Test
+    void refreshKeepsPreviouslyDiscoveredFilePaused() throws IOException {
+        Path path = Files.write(sharedDirectory.resolve("a.txt"), new byte[] {'a'});
+        LocalShareRegistrar observedRegistrar = spy(registrar);
+        SharedDirectoryScanner scanner =
+            new SharedDirectoryScanner(sharedDirectory, observedRegistrar);
+
+        // Сохраняем именно ту сессию, которую создаст первый refresh().
+        var registered = new java.util.concurrent.atomic.AtomicReference<ShareSession>();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            ShareSession session = (ShareSession) invocation.callRealMethod();
+            registered.set(session);
+            return session;
+        }).when(observedRegistrar).register(
+            eq(path), eq("a.txt"), eq(""), eq("application/octet-stream")
+        );
+
+        scanner.refresh();
+        registered.get().stop();
+        scanner.refresh();
+
+        assertTrue(provider.getManifest(SHA256_OF_A).isEmpty());
+        verify(observedRegistrar, times(1))
+            .register(path, "a.txt", "", "application/octet-stream");
+    }
+
+    @Test
+    void retriesFileAfterRegistrationFailure() throws IOException {
+        Path path = Files.write(sharedDirectory.resolve("a.txt"), new byte[] {'a'});
+        LocalShareRegistrar observedRegistrar = spy(registrar);
+
+        doThrow(new IllegalStateException("Сбой первой регистрации"))
+            .doCallRealMethod()
+            .when(observedRegistrar)
+            .register(path, "a.txt", "", "application/octet-stream");
+
+        SharedDirectoryScanner scanner =
+            new SharedDirectoryScanner(sharedDirectory, observedRegistrar);
+
+        assertThrows(IllegalStateException.class, scanner::refresh);
+        assertTrue(catalog.getActiveFileIds().isEmpty());
+
+        scanner.refresh();
+
+        assertArrayEquals(new byte[] {'a'}, provider.readChunk(SHA256_OF_A, 0));
+        verify(observedRegistrar, times(2))
+            .register(path, "a.txt", "", "application/octet-stream");
     }
 }
