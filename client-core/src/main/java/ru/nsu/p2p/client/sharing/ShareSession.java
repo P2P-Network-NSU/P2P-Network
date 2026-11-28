@@ -10,7 +10,7 @@ public final class ShareSession {
 
     private final SharedFile file;
     private final String shareId;
-    private ShareState state;
+    private volatile ShareState state;
 
     public ShareSession(String shareId, SharedFile file) {
         if (shareId == null || shareId.isBlank() || file == null) {
