@@ -52,6 +52,20 @@ class SharedFileReaderTest {
         assertThrows(IllegalArgumentException.class, () -> reader.readChunk(file, 2));
     }
 
+    @Test
+    void rejectsIndexImmediatelyAfterFullLastChunk() throws IOException {
+        byte[] content = new byte[CHUNK_SIZE];
+        Path path = Files.write(directory.resolve("one-chunk.bin"), content);
+        String hash = sha256(content);
+        FileManifest manifest = new FileManifest(
+            hash, "one-chunk.bin", content.length, CHUNK_SIZE,
+            List.of(hash), "application/octet-stream"
+        );
+        SharedFile file = new SharedFile(manifest, path, "sample", "");
+
+        assertThrows(IllegalArgumentException.class, () -> reader.readChunk(file, 1));
+    }
+
     private static byte[] sampleContent() {
         byte[] content = new byte[CHUNK_SIZE + 3];
         Arrays.fill(content, 0, CHUNK_SIZE, (byte) 7);
